@@ -1,0 +1,15 @@
+language: node_js
+node_js:
+  - "8"
+
+env:
+  global:
+    - NODE_ENV="test"
+
+before_install:
+  - npm install -g yarn nyc codecov
+
+script:
+  - yarn test:coverage
+  - nyc report --reporter=text-lcov > coverage.lcov
+  - codecov
