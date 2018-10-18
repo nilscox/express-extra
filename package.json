@@ -1,0 +1,21 @@
+{
+  "name": "express-extra",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "test": "mocha",
+    "test:coverage": "nyc yarn test"
+  },
+  "peerDependencies": {
+    "express": "4.x"
+  },
+  "dependencies": {
+    "bluebird": "^3.5.2"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "mocha": "^5.2.0"
+  }
+}
