@@ -7,9 +7,8 @@ env:
     - NODE_ENV="test"
 
 before_install:
-  - npm install -g yarn nyc codecov
+  - npm install -g yarn nyc coveralls
 
 script:
   - yarn test:coverage
-  - nyc report --reporter=text-lcov > coverage.lcov
-  - codecov
+  - nyc report --reporter=text-lcov | coveralls
