@@ -38,7 +38,7 @@ const { Validator } = require('express-extra');
 const carValidator = Validator({
   brand: (value) => {
     if (typeof value !== 'string')
-      throw new InvalidFieldTypeError('string');
+      throw new InvalidValueTypeError('string');
 
     if (value === '')
       throw new ValidationError('this field cannot be empty');
@@ -51,7 +51,7 @@ const carValidator = Validator({
       return;
 
     if (typeof value !== 'number')
-      throw new InvalidFieldTypeError('number');
+      throw new InvalidValueTypeError('number');
 
     if (value < 0)
       throw new ValidationError('this field cannot be negative');
@@ -103,7 +103,7 @@ is a positive number, allowing null as a valid value.
 await validateSpeed(69); // => 69
 await validateSpeed(null); // => null
 await validateSpeed(-8); // ValidationError!
-await validateSpeed(); // MissingFieldError!
+await validateSpeed(); // MissingValueError!
 ```
 
 > Note: unlike in a validator, if the `validate` function does not return a
@@ -384,7 +384,7 @@ Create a single value validator.
 The `params` object can define several validation rules:
 
 - type (string): the value's type (if primitive)
-- required (boolean, default: false): throw a MissingFieldError if the value is undefined
+- required (boolean, default: false): throw a MissingValueError if the value is undefined
 - allowNull (boolean, default: false): accepts `null` as a valid value
 - defaultValue (any): set a default value if not provided
 - many (boolean, default: false): accepts an array as value

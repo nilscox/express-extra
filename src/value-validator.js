@@ -1,4 +1,4 @@
-const { ValidationError, ValidationErrors, MissingFieldError, InvalidFieldTypeError } = require('./errors');
+const { ValidationError, ValidationErrors, MissingValueError, InvalidValueTypeError } = require('./errors');
 
 const DEFAULT_FIELD = {
   type: undefined,
@@ -37,7 +37,7 @@ const ValueValidator = module.exports = field => async (data, opts = DEFAULT_OPT
     return;
 
   if (required && !isset)
-    throw new MissingFieldError();
+    throw new MissingValueError();
 
   if (allowNull && data === null)
     return null;
@@ -67,12 +67,12 @@ const ValueValidator = module.exports = field => async (data, opts = DEFAULT_OPT
     const errors = [];
 
     if (!(data instanceof Array))
-      throw new InvalidFieldTypeError('Array' + (type ? `<${type}>` : ''));
+      throw new InvalidValueTypeError('Array' + (type ? `<${type}>` : ''));
 
     for (let i = 0; i < data.length; ++i) {
       try {
         if (isPrimitiveType(type) && typeof data[i] !== type)
-          throw new InvalidFieldTypeError(type);
+          throw new InvalidValueTypeError(type);
 
         validated[i] = await validateData(data[i]);
       } catch (e) {
@@ -93,7 +93,7 @@ const ValueValidator = module.exports = field => async (data, opts = DEFAULT_OPT
   }
 
   if (isPrimitiveType(type) && typeof data !== type)
-    throw new InvalidFieldTypeError(type);
+    throw new InvalidValueTypeError(type);
 
   return validateData(data);
 };

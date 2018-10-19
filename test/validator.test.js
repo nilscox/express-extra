@@ -1,7 +1,7 @@
 const expect = require('./expect');
 const { Validator, ValueValidator, errors } = require('../index');
 
-const { ValidationError, ValidationErrors, InvalidFieldTypeError, MissingFieldError } = errors;
+const { ValidationError, ValidationErrors, InvalidValueTypeError, MissingValueError } = errors;
 
 describe('validator', () => {
 
@@ -79,7 +79,7 @@ describe('validator', () => {
       expect(await itemValidator({ bar: 42, qux: [1, 2, 3] })).to.deep.eql({ foo: undefined, bar: 42, baz: true, baz: undefined, qux: [1, 2, 3] });
       expect(await itemValidator({ foo: 'foo', bar: 42, baz: null, qux: [] })).to.deep.eql({ foo: 'foo', bar: 42, baz: null, qux: [] });
       
-      await expect(itemValidator('salut')).to.be.rejectedWith(InvalidFieldTypeError)
+      await expect(itemValidator('salut')).to.be.rejectedWith(InvalidValueTypeError)
         .then(e => {
           expect(e).to.have.property('field', undefined);
           expect(e).to.have.property('type', 'Item');
@@ -88,7 +88,7 @@ describe('validator', () => {
       await expect(itemValidator({ foo: null, bar: 42, baz: true, qux: [1, 2, 3] })).to.be.rejectedWith(ValidationErrors)
         .then(e => {
           expect(e.errors).to.have.lengthOf(1);
-          expect(e.errors[0]).to.be.an.instanceof(InvalidFieldTypeError);
+          expect(e.errors[0]).to.be.an.instanceof(InvalidValueTypeError);
           expect(e.errors[0]).to.have.property('field', 'foo');
           expect(e.errors[0]).to.have.property('type', 'string');
         });
@@ -96,7 +96,7 @@ describe('validator', () => {
       await expect(itemValidator({ foo: 'foo', bar: 42, baz: true })).to.be.rejectedWith(ValidationErrors)
         .then(e => {
           expect(e.errors).to.have.lengthOf(1);
-          expect(e.errors[0]).to.be.an.instanceof(MissingFieldError);
+          expect(e.errors[0]).to.be.an.instanceof(MissingValueError);
           expect(e.errors[0]).to.have.property('field', 'qux');
         });
 
@@ -104,16 +104,16 @@ describe('validator', () => {
         .then(e => {
           expect(e.errors).to.have.lengthOf(3);
 
-          expect(e.errors[0]).to.be.an.instanceof(InvalidFieldTypeError);
+          expect(e.errors[0]).to.be.an.instanceof(InvalidValueTypeError);
           expect(e.errors[0]).to.have.property('field', 'foo');
           expect(e.errors[0]).to.have.property('type', 'string');
 
-          expect(e.errors[1]).to.be.an.instanceof(MissingFieldError);
+          expect(e.errors[1]).to.be.an.instanceof(MissingValueError);
           expect(e.errors[1]).to.have.property('field', 'bar');
 
           expect(e.errors[2]).to.be.an.instanceof(ValidationErrors);
           expect(e.errors[2].errors).to.have.lengthOf(1);
-          expect(e.errors[2].errors[0]).to.be.an.instanceof(InvalidFieldTypeError);
+          expect(e.errors[2].errors[0]).to.be.an.instanceof(InvalidValueTypeError);
           expect(e.errors[2].errors[0]).to.have.property('field', '[1]');
           expect(e.errors[2].errors[0]).to.have.property('type', 'number');
         });
@@ -128,7 +128,7 @@ describe('validator', () => {
         { foo: undefined, bar: 69, baz: false, qux: [0, 0] },
       ]);
 
-      await expect(itemValidator('salut', { many: true })).to.be.rejectedWith(InvalidFieldTypeError)
+      await expect(itemValidator('salut', { many: true })).to.be.rejectedWith(InvalidValueTypeError)
         .then(e => {
           expect(e).to.have.property('field', undefined);
           expect(e).to.have.property('type', 'Array<Item>');
@@ -145,10 +145,10 @@ describe('validator', () => {
           expect(e.errors[0]).to.have.property('field', '[0]');
           expect(e.errors[0].errors).to.have.lengthOf(2);
 
-          expect(e.errors[0].errors[0]).to.be.an.instanceof(MissingFieldError);
+          expect(e.errors[0].errors[0]).to.be.an.instanceof(MissingValueError);
           expect(e.errors[0].errors[0]).to.have.property('field', 'bar');
 
-          expect(e.errors[0].errors[1]).to.be.an.instanceof(InvalidFieldTypeError);
+          expect(e.errors[0].errors[1]).to.be.an.instanceof(InvalidValueTypeError);
           expect(e.errors[0].errors[1]).to.have.property('field', 'qux');
           expect(e.errors[0].errors[1]).to.have.property('type', 'Array<number>');
 
@@ -191,14 +191,14 @@ describe('validator', () => {
       await expect(thingValidator({})).to.be.rejectedWith(ValidationErrors)
         .then(e => {
           expect(e.errors).to.have.lengthOf(1);
-          expect(e.errors[0]).to.be.an.instanceof(MissingFieldError);
+          expect(e.errors[0]).to.be.an.instanceof(MissingValueError);
           expect(e.errors[0]).to.have.property('field', 'count');
         });
 
       await expect(thingValidator({ count: 1, item: null })).to.be.rejectedWith(ValidationErrors)
         .then(e => {
           expect(e.errors).to.have.lengthOf(1);
-          expect(e.errors[0]).to.be.an.instanceof(InvalidFieldTypeError);
+          expect(e.errors[0]).to.be.an.instanceof(InvalidValueTypeError);
           expect(e.errors[0]).to.have.property('field', 'item');
           expect(e.errors[0]).to.have.property('type', 'Item');
         });
@@ -210,11 +210,11 @@ describe('validator', () => {
           expect(e.errors[0]).to.be.an.instanceof(ValidationErrors);
           expect(e.errors[0].errors).to.have.lengthOf(2);
 
-          expect(e.errors[0].errors[0]).to.be.an.instanceof(InvalidFieldTypeError);
+          expect(e.errors[0].errors[0]).to.be.an.instanceof(InvalidValueTypeError);
           expect(e.errors[0].errors[0]).to.have.property('field', 'foo');
           expect(e.errors[0].errors[0]).to.have.property('type', 'string');
 
-          expect(e.errors[0].errors[1]).to.be.an.instanceof(InvalidFieldTypeError);
+          expect(e.errors[0].errors[1]).to.be.an.instanceof(InvalidValueTypeError);
           expect(e.errors[0].errors[1]).to.have.property('field', 'qux');
           expect(e.errors[0].errors[1]).to.have.property('type', 'Array<number>');
         });
@@ -235,7 +235,7 @@ describe('validator', () => {
           expect(e.errors[0].errors[0]).to.have.property('field', 'item');
           expect(e.errors[0].errors[0].errors).to.have.lengthOf(1);
 
-          expect(e.errors[0].errors[0].errors[0]).to.be.an.instanceof(MissingFieldError);
+          expect(e.errors[0].errors[0].errors[0]).to.be.an.instanceof(MissingValueError);
           expect(e.errors[0].errors[0].errors[0]).to.have.property('field', 'bar');
 
           expect(e.errors[1]).to.be.an.instanceof(ValidationErrors);
@@ -250,7 +250,7 @@ describe('validator', () => {
           expect(e.errors[1].errors[0].errors[0]).to.have.property('field', 'qux');
           expect(e.errors[1].errors[0].errors[0].errors).to.have.lengthOf(1);
 
-          expect(e.errors[1].errors[0].errors[0].errors[0]).to.be.an.instanceof(InvalidFieldTypeError);
+          expect(e.errors[1].errors[0].errors[0].errors[0]).to.be.an.instanceof(InvalidValueTypeError);
           expect(e.errors[1].errors[0].errors[0].errors[0]).to.have.property('field', '[2]');
           expect(e.errors[1].errors[0].errors[0].errors[0]).to.have.property('type', 'number');
         });
@@ -303,7 +303,7 @@ describe('validator', () => {
         ],
       });
 
-      await expect(recursiveValidator(NaN)).to.be.rejectedWith(InvalidFieldTypeError)
+      await expect(recursiveValidator(NaN)).to.be.rejectedWith(InvalidValueTypeError)
         .then(e => {
           expect(e.type).to.eql('Recuuuursion');
         });
@@ -327,11 +327,11 @@ describe('validator', () => {
           expect(e.errors[0].errors[0]).to.have.property('field', '[0]');
           expect(e.errors[0].errors[0].errors).to.have.lengthOf(2);
 
-          expect(e.errors[0].errors[0].errors[0]).to.be.an.instanceof(InvalidFieldTypeError);
+          expect(e.errors[0].errors[0].errors[0]).to.be.an.instanceof(InvalidValueTypeError);
           expect(e.errors[0].errors[0].errors[0]).to.have.property('field', 'single');
           expect(e.errors[0].errors[0].errors[0]).to.have.property('type', 'Recuuuursion');
 
-          expect(e.errors[0].errors[0].errors[1]).to.be.an.instanceof(InvalidFieldTypeError);
+          expect(e.errors[0].errors[0].errors[1]).to.be.an.instanceof(InvalidValueTypeError);
           expect(e.errors[0].errors[0].errors[1]).to.have.property('field', 'multiple');
           expect(e.errors[0].errors[0].errors[1]).to.have.property('type', 'Array');
 
@@ -339,7 +339,7 @@ describe('validator', () => {
           expect(e.errors[0].errors[1]).to.have.property('field', '[2]');
           expect(e.errors[0].errors[1].errors).to.have.lengthOf(1);
 
-          expect(e.errors[0].errors[1].errors[0]).to.be.an.instanceof(InvalidFieldTypeError);
+          expect(e.errors[0].errors[1].errors[0]).to.be.an.instanceof(InvalidValueTypeError);
           expect(e.errors[0].errors[1].errors[0]).to.have.property('field', 'multiple');
           expect(e.errors[0].errors[1].errors[0]).to.have.property('type', 'Array');
         });
@@ -524,7 +524,7 @@ describe('validator', () => {
       const carValidator = Validator({
         brand: (value) => {
           if (typeof value !== 'string')
-            throw new InvalidFieldTypeError('string');
+            throw new InvalidValueTypeError('string');
 
           if (value === '')
             throw new ValidationError('this field cannot be empty');
@@ -537,7 +537,7 @@ describe('validator', () => {
             return;
 
           if (typeof value !== 'number')
-            throw new InvalidFieldTypeError('number');
+            throw new InvalidValueTypeError('number');
 
           if (value < 0)
             throw new ValidationError('this field cannot be negative');
@@ -580,7 +580,7 @@ describe('validator', () => {
         expect(await validateSpeed(null)).to.be.null;
 
         await expect(validateSpeed(-8)).to.be.rejectedWith(/cannot be negative/);
-        await expect(validateSpeed()).to.be.rejectedWith(MissingFieldError);
+        await expect(validateSpeed()).to.be.rejectedWith(MissingValueError);
       });
 
       it('single value validation 2', async () => {

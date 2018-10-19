@@ -1,4 +1,4 @@
-const { ValidationError, ValidationErrors, InvalidFieldTypeError } = require('./errors');
+const { ValidationError, ValidationErrors, InvalidValueTypeError } = require('./errors');
 
 const Validator = module.exports = (fields, type = 'any') => {
 
@@ -7,7 +7,7 @@ const Validator = module.exports = (fields, type = 'any') => {
     const errors = [];
 
     if (!(data instanceof Array))
-      throw new InvalidFieldTypeError(`Array<${type}>`);
+      throw new InvalidValueTypeError(`Array<${type}>`);
 
     for (let i = 0; i < data.length; ++i) {
       try {
@@ -35,7 +35,7 @@ const Validator = module.exports = (fields, type = 'any') => {
     const keys = Object.keys(fields);
 
     if (!(data instanceof Object))
-      throw new InvalidFieldTypeError(type);
+      throw new InvalidValueTypeError(type);
 
     for (let i = 0; i < keys.length; ++i) {
       const key = keys[i];

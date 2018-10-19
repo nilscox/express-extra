@@ -90,7 +90,7 @@ class ValidationErrors extends ValidationError {
 
 }
 
-class MissingFieldError extends ValidationError {
+class MissingValueError extends ValidationError {
 
   constructor(field) {
     super('this field is required', field);
@@ -98,7 +98,7 @@ class MissingFieldError extends ValidationError {
 
 }
 
-class InvalidFieldTypeError extends ValidationError {
+class InvalidValueTypeError extends ValidationError {
 
   constructor(type, field) {
     super(`this field must be of type ${type}`, field);
@@ -114,6 +114,6 @@ module.exports = {
   AuthenticationError,
   ValidationErrors,
   ValidationError,
-  MissingFieldError,
-  InvalidFieldTypeError,
+  MissingValueError,
+  InvalidValueTypeError,
 };
