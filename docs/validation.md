@@ -6,88 +6,24 @@ expected format, thus checking the types and values of each fields.
 
 ExpressExtra validation system works with the concept of *Validator*, a
 function that accepts some data and returns the validated value, throwing
-exceptions if the validation fails. Big picture:
+exceptions if the validation fails.
+
+A **validator** is a *function* that takes a piece of data and an options
+object, and returns the validated value. It must throw an instance of
+ValidationError or one of its sub-class if the validation fails.
 
 ```js
-const voyagerValidator = Validator({
-  name: ValueValidator({
-    type: 'string',
-    required: true,
-  }),
-  age: ValueValidator({
-    type: 'number',
-    required: false,
-    allowNull: true,
-    validate: value => {
-      if (value <= 0)
-        throw new ValidationError('this field cannot be negative');
-    },
-  }),
-});
-
-const carValidator = Validator({
-  brand: ValueValidator({
-    type: 'string',
-    required: true,
-    validate: value => {
-      if (value === '')
-        throw new ValidationError('this field cannot be empty');
-    },
-  }),
-  tank: ValueValidator({
-    type: 'number',
-    required: true,
-    validate: (value, opts) => {
-      if (value < 0)
-        throw new ValidationError('this field cannot be negative');
-
-      if (value > opts.tankMax)
-        throw new ValidationError('this field cannot be over ' + opts.tankMax);
-
-      return Math.round(value);
-    },
-  }),
-  driver: voyagerValidator,
-  voyagers: ValueValidator({
-    many: true,
-    defaultValue: [],
-    validate: voyagerValidator,
-  }),
-});
-
-const myCar = await carValidator({
-  brand: 'ford',
-  tank: 43.2,
-  speed: 69,
-  driver: {
-    name: 'Harisson',
-    age: 51,
-  },
-  voyagers: [
-    { name: 'Tom' },
-    { name: 'Jeanne', age: 27 },
-  ],
-});
-
-/*
-myCar = {
-  brand: 'ford',
-  tank: 43,
-  driver: {
-    name: 'Harrison',
-    age: 51,
-  },
-  voyagers: [
-    { name: 'Tom', age: undefined },
-    { name: 'Jeanne', age: 27 },
-  ],
-}
-*/
+Validator: (data: any, opts: {}) => (validated: any)
 ```
 
-## Object validation
+See the [full example](#full-example) for an overview of the validation system.
+[Read the full API](#api)
 
-A `Validator` is a function that verify that an object (or an array of
+## Using validators
+
+### Object validation
+
+An object validator is a function verifying that an object (or an array of
 objects), respect a given set of rules. It can be created using the
 `extra.Validator` function, providing an object mapping the keys of the
 expected object to a function that will be invoked with the data to validate.
@@ -126,16 +62,22 @@ const carValidator = Validator({
 ```
 
 `carValidator` is an *object validator*, a function verifying that an object
-contains two keys, "brand" and "tank", that the brand is a non-empty string and
-the tank is a positive number, but can be ommited. If extra fields are given,
-they will be discarded.
+contains two keys : "brand", a non-empty string and "tank", a positive number
+which can be ommited. If extra fields are given, they will be discarded.
 
 ```js
 const myCar = await carValidator({ brand: 'peugeot', tank: 43.2, speed: 123 });
 // myCar = { brand: 'peugeot', tank: 43 }
 ```
 
-## Single value validation
+To validate an array of objects, we should set `many` to `true` in the
+validator's options.
+
+```js
+const myCars = await carValidator([car1, car2, car3], { many: true });
+```
+
+### Single value validation
 
 Now this is a tedious way to perform data validation. A single field's value
 can often be checked using the `extra.ValueValidator` function. It creates a
@@ -214,7 +156,7 @@ const myCar = carValidator({
 // myCar = { brand: 'renault', tank: 43, voyagers: ['Nils', 'Tom', 'Jeanne'] }
 ```
 
-## Nesting validators
+### Nesting validators
 
 Validating an object's field being another object can be achieve using a
 validator as a `validate` function.
@@ -266,7 +208,7 @@ const carValidator = Validator({
 });
 ```
 
-## Parameterized validators
+### Parameterized validators
 
 Sometimes, validation can be performed a bit differently depending on the
 context. In answer to this, an `opts` object is passed down all validators,
@@ -295,7 +237,7 @@ carValidator({ brand: 'twingo', tank: 43.2 }, { tankMax: 100, tankRound: true })
 carValidator({ brand: 'twingo', tank: 123.4 }, { tankMax: 100, tankRound: false }); // fail!
 ```
 
-## Partial validation
+### Partial validation
 
 If for some reason, you don't require all values to be set even if the
 `required` rule is set to true in a value validator, then the `partial` option
@@ -312,9 +254,95 @@ const myCar = await carValidator({ tank: 51 }, { partial: true });
 // myCar = { brand: undefined, tank: 51 }
 ```
 
-# API
+## Full example
 
-## Validator type
+This example creates a voyager validator verifying that an object has at least
+the keys "name" (string) and "age" (positive number or null, but can be omitted).
+
+In the same way, it creates a car validator with the fields "brand" (a non-empty
+string) and "tank" (a positive number), "driver" (an object that will be
+checked with a voyager validator), and "passengers" (an array of voyagers).
+
+```js
+const voyagerValidator = Validator({
+  name: ValueValidator({
+    type: 'string',
+    required: true,
+  }),
+  age: ValueValidator({
+    type: 'number',
+    required: false,
+    allowNull: true,
+    validate: value => {
+      if (value <= 0)
+        throw new ValidationError('this field cannot be negative');
+    },
+  }),
+});
+
+const carValidator = Validator({
+  brand: ValueValidator({
+    type: 'string',
+    required: true,
+    validate: value => {
+      if (value === '')
+        throw new ValidationError('this field cannot be empty');
+    },
+  }),
+  tank: ValueValidator({
+    type: 'number',
+    required: true,
+    validate: (value, opts) => {
+      if (value < 0)
+        throw new ValidationError('this field cannot be negative');
+
+      if (value > opts.tankMax)
+        throw new ValidationError('this field cannot be over ' + opts.tankMax);
+
+      return Math.round(value);
+    },
+  }),
+  driver: voyagerValidator,
+  voyagers: ValueValidator({
+    many: true,
+    defaultValue: [],
+    validate: voyagerValidator,
+  }),
+});
+
+const myCar = await carValidator({
+  brand: 'ford',
+  tank: 43.2,
+  speed: 69,
+  driver: {
+    name: 'Harisson',
+    age: 51,
+  },
+  voyagers: [
+    { name: 'Tom' },
+    { name: 'Jeanne', age: 27 },
+  ],
+});
+
+/*
+myCar = {
+  brand: 'ford',
+  tank: 43,
+  driver: {
+    name: 'Harrison',
+    age: 51,
+  },
+  voyagers: [
+    { name: 'Tom', age: undefined },
+    { name: 'Jeanne', age: 27 },
+  ],
+}
+*/
+```
+
+## API
+
+### Validator type
 
 ```js
 Validator: (data: any, opts: {}) => any | Promise<any>
@@ -345,7 +373,7 @@ set to `true` in the validator's options, the expected data value is an array
 of object rather than a single one. Other values in `opts` will be forwarded
 to all fields validators.
 
-## ValueValidator
+### ValueValidator
 
 ```js
 ValueValidator(params: {}) => Validator
