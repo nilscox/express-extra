@@ -549,6 +549,18 @@ describe('validator', () => {
       const myCar = await carValidator({ brand: 'peugeot', tank: 43.2, speed: 123 });
 
       expect(myCar).to.deep.eql({ brand: 'peugeot', tank: 43 });
+
+      const myCars = await carValidator([
+          { brand: 'peugeot', tank: 43.2, speed: 123 },
+          { brand: 'ferrari' },
+          { brand: 'batmobile', tank: 0 },
+        ], { many: true });
+
+      expect(myCars).to.deep.eql([
+          { brand: 'peugeot', tank: 43 },
+          { brand: 'ferrari', tank: undefined },
+          { brand: 'batmobile', tank: 0 },
+        ]);
     });
 
     describe('single value validation', () => {
