@@ -16,8 +16,8 @@ ValidationError or one of its sub-class if the validation fails.
 Validator: (data: any, opts: {}) => (validated: any)
 ```
 
-See the [full example](#full-example) for an overview of the validation system.
-[Read the full API](#api)
+- [see the full example](#full-example) for an overview of the validation system
+- [read the API](#api).
 
 ## Using validators
 
