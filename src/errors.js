@@ -20,22 +20,6 @@ class BadRequestError extends ExpressExtraError {
 
 }
 
-class NotFoundError extends ExpressExtraError {
-
-  constructor(model) {
-    super(404, `${model} not found`);
-  }
-
-}
-
-class AuthenticationError extends ExpressExtraError {
-
-  constructor(message) {
-    super(401, 'unauthorized: ' + message);
-  }
-
-}
-
 class ValidationError extends BadRequestError {
 
   constructor(message, field) {
@@ -110,8 +94,6 @@ class InvalidValueTypeError extends ValidationError {
 module.exports = {
   ExpressExtraError,
   BadRequestError,
-  NotFoundError,
-  AuthenticationError,
   ValidationErrors,
   ValidationError,
   MissingValueError,
