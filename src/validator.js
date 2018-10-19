@@ -1,6 +1,6 @@
 const { ValidationError, ValidationErrors, InvalidFieldTypeError } = require('./errors');
 
-const validator = module.exports = (fields, type = 'any') => {
+const Validator = module.exports = (fields, type = 'any') => {
 
   const validateArray = async (data, opts) => {
     const validated = [];
@@ -59,7 +59,7 @@ const validator = module.exports = (fields, type = 'any') => {
     return validated;
   };
 
-  return async (data, opts = { many: false, partial: false }) => {
+  return async (data, opts = {}) => {
     if (opts.many)
       return await validateArray(data, { ...opts, many: false });
     else

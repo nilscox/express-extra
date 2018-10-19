@@ -1,12 +1,12 @@
 const expect = require('./expect');
-const { validate, errors } = require('../index');
+const { ValueValidator, errors } = require('../index');
 
 const { ValidationError } = errors;
 
-describe('validate', () => {
+describe('ValueValidator', () => {
 
   it('should validate a field type', async () => {
-    const validateTypeNumber = validate({
+    const validateTypeNumber = ValueValidator({
       type: 'number',
     });
 
@@ -16,7 +16,7 @@ describe('validate', () => {
   });
 
   it('should validate a field type, allowing null', async () => {
-    const validateTypeNumber = validate({
+    const validateTypeNumber = ValueValidator({
       type: 'number',
       allowNull: true,
     });
@@ -27,7 +27,7 @@ describe('validate', () => {
   });
 
   it('should validate a required field', async () => {
-    const validateRequired = validate({
+    const validateRequired = ValueValidator({
       required: true,
     });
 
@@ -38,7 +38,7 @@ describe('validate', () => {
   });
 
   it('should validate a field with a default value', async () => {
-    const validateDefault = validate({
+    const validateDefault = ValueValidator({
       defaultValue: 321,
     });
 
@@ -49,7 +49,7 @@ describe('validate', () => {
   });
 
   it('should validate a required field with a default value', async () => {
-    const validateDefault = validate({
+    const validateDefault = ValueValidator({
       required: true,
       defaultValue: 321,
     });
@@ -58,7 +58,7 @@ describe('validate', () => {
   });
 
   it('should validate a required field with a default value of an incorrect type', async () => {
-    const validateDefault = validate({
+    const validateDefault = ValueValidator({
       type: 'number',
       required: true,
       defaultValue: 'coucou',
@@ -68,7 +68,7 @@ describe('validate', () => {
   });
 
   it('should validate a field through a validation function', async () => {
-    const validateFunc = validate({
+    const validateFunc = ValueValidator({
       type: 'number',
       validate: (value, opts) => {
         expect(opts).to.deep.eql({ partial: false });
@@ -83,7 +83,7 @@ describe('validate', () => {
   });
 
   it('should validate a field through a validation function returning a value', async () => {
-    const validateFunc = validate({
+    const validateFunc = ValueValidator({
       type: 'number',
       validate: value => value + 1,
     });
@@ -92,7 +92,7 @@ describe('validate', () => {
   });
 
   it('should validate a field through multiple validation functions', async () => {
-    const validateFunc = validate({
+    const validateFunc = ValueValidator({
       type: 'number',
       validate: [
         value => {
@@ -112,7 +112,7 @@ describe('validate', () => {
   });
 
   it('should validate a field through multiple validation functions returning values', async () => {
-    const validateFunc = validate({
+    const validateFunc = ValueValidator({
       type: 'number',
       validate: [
         value => value + 1,
@@ -129,7 +129,7 @@ describe('validate', () => {
   });
 
   it('should validate a field through a validation function returning a validation function', async () => {
-    const validateFunc = validate({
+    const validateFunc = ValueValidator({
       type: 'number',
       validate: a => b => c => a + b + c,
     });
@@ -138,7 +138,7 @@ describe('validate', () => {
   });
 
   it('should validate a field through multiple validation functions returning validation functions', async () => {
-    const validateFunc = validate({
+    const validateFunc = ValueValidator({
       type: 'number',
       validate: [
         a => b => a + b,
@@ -151,7 +151,7 @@ describe('validate', () => {
   });
 
   it('should validate an array', async () => {
-    const validateArray = validate({
+    const validateArray = ValueValidator({
       many: true,
     });
 
@@ -162,7 +162,7 @@ describe('validate', () => {
   });
 
   it('should validate an array, allowing null', async () => {
-    const validateArray = validate({
+    const validateArray = ValueValidator({
       many: true,
       allowNull: true,
     });
@@ -174,7 +174,7 @@ describe('validate', () => {
   });
 
   it('should validate an array of numbers', async () => {
-    const validateArrayNumber = validate({
+    const validateArrayNumber = ValueValidator({
       type: 'number',
       many: true,
     });
@@ -187,7 +187,7 @@ describe('validate', () => {
   });
 
   it('should validate an array of numbers, allowing null', async () => {
-    const validateArrayNumber = validate({
+    const validateArrayNumber = ValueValidator({
       type: 'number',
       many: true,
       allowNull: true,
@@ -201,7 +201,7 @@ describe('validate', () => {
   });
 
   it('should forward opts to a validation function', async () => {
-    const validateFunc = validate({
+    const validateFunc = ValueValidator({
       validate: (value, opts) => {
         expect(opts.foo).to.eql(42);
       },
@@ -211,7 +211,7 @@ describe('validate', () => {
   });
 
   it('should partially validate a required field', async () => {
-    const validateRequire = validate({
+    const validateRequire = ValueValidator({
       required: true,
     });
 

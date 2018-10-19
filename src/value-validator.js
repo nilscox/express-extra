@@ -24,7 +24,7 @@ const isPrimitiveType = t => {
   ].indexOf(t) >= 0;
 };
 
-const validate = module.exports = field => async (data, opts = DEFAULT_OPTS) => {
+const ValueValidator = module.exports = field => async (data, opts = DEFAULT_OPTS) => {
   const { type, required, allowNull, defaultValue, many, validate } = { ...DEFAULT_FIELD, ...field };
   const { partial } = { ...DEFAULT_OPTS, ...opts };
 

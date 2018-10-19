@@ -1,16 +1,16 @@
 const expect = require('./expect');
-const { validator, validate, errors } = require('../index');
+const { Validator, ValueValidator, errors } = require('../index');
 
 const { ValidationError, ValidationErrors, InvalidFieldTypeError, MissingFieldError } = errors;
 
 describe('validator', () => {
 
-  describe('without validate', () => {
+  describe('without ValueValidator', () => {
 
     it('should validate an object with a validation function', async () => {
-      const itemValidator = validator({
+      const itemValidator = Validator({
         count: (value, opts) => {
-          expect(opts).to.deep.eql({ many: false, partial: false });
+          expect(opts).to.deep.eql({});
 
           if (value < 0)
             throw new ValidationError('this field must be positive');
@@ -24,7 +24,7 @@ describe('validator', () => {
     });
 
     it('should validate an object with a multiple fields', async () => {
-      const itemValidator = validator({
+      const itemValidator = Validator({
         a: v => v,
         b: v => v,
       });
@@ -34,7 +34,7 @@ describe('validator', () => {
     });
 
     it('should validate an object with a multiple invalid fields', async () => {
-      const itemValidator = validator({
+      const itemValidator = Validator({
         a: v => { throw new ValidationError('a is invalid'); },
         b: v => { throw new ValidationError('b is invalid'); },
       });
@@ -43,7 +43,7 @@ describe('validator', () => {
     });
 
     it('should validate an object with an extra field', async () => {
-      const itemValidator = validator({
+      const itemValidator = Validator({
         a: v => v,
       });
 
@@ -52,21 +52,21 @@ describe('validator', () => {
 
   });
 
-  describe('with validate', () => {
+  describe('with ValueValidator', () => {
 
-    const itemValidator = validator({
-      foo: validate({
+    const itemValidator = Validator({
+      foo: ValueValidator({
         type: 'string',
       }),
-      bar: validate({
+      bar: ValueValidator({
         type: 'number',
         required: true,
       }),
-      baz: validate({
+      baz: ValueValidator({
         type: 'boolean',
         allowNull: true,
       }),
-      qux: validate({
+      qux: ValueValidator({
         type: 'number',
         many: true,
         required: true,
@@ -166,12 +166,12 @@ describe('validator', () => {
     });
 
     it('should validate an object using nested validators', async () => {
-      const thingValidator = validator({
-        count: validate({
+      const thingValidator = Validator({
+        count: ValueValidator({
           type: 'number',
           required: true,
         }),
-        item: validate({
+        item: ValueValidator({
           validate: itemValidator,
         }),
       });
@@ -257,12 +257,12 @@ describe('validator', () => {
     });
 
     it('should validate an object using a recursive validator', async () => {
-      const recursiveValidator = validator({
-        single: validate({
+      const recursiveValidator = Validator({
+        single: ValueValidator({
           allowNull: true,
           validate: () => recursiveValidator,
         }),
-        multiple: validate({
+        multiple: ValueValidator({
           allowNull: true,
           many: true,
           validate: () => recursiveValidator,
@@ -346,16 +346,16 @@ describe('validator', () => {
     });
 
     it('should validate an object using mutually recursive validators', async () => {
-      const someValidator = validator({
-        foo: validate({ type: 'number' }),
-        thing: validate({
+      const someValidator = Validator({
+        foo: ValueValidator({ type: 'number' }),
+        thing: ValueValidator({
           validate: () => thingValidator,
         }),
       });
 
-      const thingValidator = validator({
-        bar: validate({ type: 'number' }),
-        some: validate({
+      const thingValidator = Validator({
+        bar: ValueValidator({ type: 'number' }),
+        some: ValueValidator({
           validate: () => someValidator,
         }),
       });
@@ -386,8 +386,8 @@ describe('validator', () => {
     });
 
     it('should forward opts to validation functions', async () => {
-      const someValidator = validator({
-        count: validate({
+      const someValidator = Validator({
+        count: ValueValidator({
           type: 'number',
           validate: (value, opts) => {
             expect(opts).to.deep.eql({ foobar: 42 });
@@ -399,11 +399,11 @@ describe('validator', () => {
     });
 
     it('should forward opts to validation functions when using nested validators', async () => {
-      const someValidator = validator({
-        some: validate({
+      const someValidator = Validator({
+        some: ValueValidator({
           type: 'Some',
-          validate: validator({
-            thing: validate({
+          validate: Validator({
+            thing: ValueValidator({
               validate: (value, opts) => {
                 expect(opts).to.deep.eql({ foobar: 42 });
               },
@@ -413,6 +413,289 @@ describe('validator', () => {
       });
 
       expect(await someValidator({ some: { thing: 51 } }, { foobar: 42 })).to.deep.eql({ some: { thing : 51 } });
+    });
+
+  });
+
+  describe('readme examples', () => {
+
+    const carValidatorBrandTank = {
+      brand: ValueValidator({
+        type: 'string',
+        required: true,
+        validate: value => {
+          if (value === '')
+            throw new ValidationError('this field cannot be empty');
+        },
+      }),
+      tank: ValueValidator({
+        type: 'number',
+        required: false,
+        validate: value => {
+          if (value < 0)
+            throw new ValidationError('this field cannot be negative');
+
+          return Math.round(value);
+        },
+      }),
+    };
+
+    const voyagerValidator = Validator({
+      name: ValueValidator({ type: 'string' }),
+      age: ValueValidator({ type: 'number' }),
+    });
+
+    it('full example', async () => {
+      const voyagerValidator = Validator({
+        name: ValueValidator({
+          type: 'string',
+          required: true,
+        }),
+        age: ValueValidator({
+          type: 'number',
+          required: false,
+          allowNull: true,
+          validate: value => {
+            if (value <= 0)
+              throw new ValidationError('this field cannot be negative');
+          },
+        }),
+      });
+
+      const carValidator = Validator({
+        brand: ValueValidator({
+          type: 'string',
+          required: true,
+          validate: value => {
+            if (value === '')
+              throw new ValidationError('this field cannot be empty');
+          },
+        }),
+        tank: ValueValidator({
+          type: 'number',
+          required: true,
+          validate: (value, opts) => {
+            if (value < 0)
+              throw new ValidationError('this field cannot be negative');
+
+            if (value > opts.tankMax)
+              throw new ValidationError('this field cannot be over ' + opts.tankMax);
+
+            return Math.round(value);
+          },
+        }),
+        driver: voyagerValidator,
+        voyagers: ValueValidator({
+          many: true,
+          defaultValue: [],
+          validate: voyagerValidator,
+        }),
+      });
+
+      const myCar = await carValidator({
+        brand: 'ford',
+        tank: 43.2,
+        speed: 69,
+        driver: {
+          name: 'Harrison',
+          age: 51,
+        },
+        voyagers: [
+          { name: 'Tom' },
+          { name: 'Jeanne', age: 27 },
+        ],
+      });
+
+      expect(myCar).to.deep.eql({
+        brand: 'ford',
+        tank: 43,
+        driver: {
+          name: 'Harrison',
+          age: 51,
+        },
+        voyagers: [
+          { name: 'Tom', age: undefined },
+          { name: 'Jeanne', age: 27 },
+        ],
+      });
+    });
+
+    it('object validation', async () => {
+      const carValidator = Validator({
+        brand: (value) => {
+          if (typeof value !== 'string')
+            throw new InvalidFieldTypeError('string');
+
+          if (value === '')
+            throw new ValidationError('this field cannot be empty');
+
+          return value;
+        },
+        tank: (value) => {
+          // not required
+          if (value === undefined)
+            return;
+
+          if (typeof value !== 'number')
+            throw new InvalidFieldTypeError('number');
+
+          if (value < 0)
+            throw new ValidationError('this field cannot be negative');
+
+          return Math.round(value);
+        },
+      });
+
+      const myCar = await carValidator({ brand: 'peugeot', tank: 43.2, speed: 123 });
+
+      expect(myCar).to.deep.eql({ brand: 'peugeot', tank: 43 });
+    });
+
+    describe('single value validation', () => {
+
+      it('single value validation 1', async () => {
+        const validateSpeed = ValueValidator({
+          type: 'number',
+          required: true,
+          allowNull: true,
+          validate: value => {
+            if (value < 0)
+              throw new ValidationError('this field cannot be negative');
+          },
+        });
+
+        expect(await validateSpeed(69)).to.eql(69);
+        expect(await validateSpeed(null)).to.be.null;
+
+        await expect(validateSpeed(-8)).to.be.rejectedWith(/cannot be negative/);
+        await expect(validateSpeed()).to.be.rejectedWith(MissingFieldError);
+      });
+
+      it('single value validation 2', async () => {
+        const carValidator = Validator(carValidatorBrandTank);
+
+        const myCar = await carValidator({ brand: 'peugeot', tank: 43.2 });
+
+        expect(myCar).to.deep.eql({ brand: 'peugeot', tank: 43 });
+      });
+
+      it('single value validation 3', async () => {
+        const carValidator = Validator({
+          ...carValidatorBrandTank,
+          voyagers: ValueValidator({
+            type: 'string',
+            many: true,
+          }),
+        });
+
+        const myCar = await carValidator({
+          brand: 'renault',
+          tank: 43.2,
+          voyagers: ['Nils', 'Tom', 'Jeanne'],
+        });
+
+        expect(myCar).to.deep.eql({ brand: 'renault', tank: 43, voyagers: ['Nils', 'Tom', 'Jeanne'] });
+      });
+
+    });
+
+    describe('nesting validators', () => {
+
+      it('nesting validators 1', async () => {
+        const carValidator = Validator({
+          ...carValidatorBrandTank,
+          driver: voyagerValidator,
+          passengers: ValueValidator({
+            required: true,
+            many: true,
+            defaultValue: [],
+            validate: voyagerValidator,
+          }),
+        });
+
+        const myCar = await carValidator({
+          brand: 'dominus',
+          tank: 43.2,
+          driver: { name: 'Nils', age: 51 },
+          passengers: [
+            { name: 'Tom', age: 8 },
+            { name: 'Jeanne', age: 27 },
+          ],
+        });
+
+        expect(myCar).to.deep.eql({
+          brand: 'dominus',
+          tank: 43,
+          driver: { name: 'Nils', age: 51 },
+          passengers: [
+            { name: 'Tom', age: 8 },
+            { name: 'Jeanne', age: 27 },
+          ],
+        });
+      });
+
+      it('nesting validators 2', async () => {
+        const carValidator = Validator({
+          ...carValidatorBrandTank,
+          driver: ValueValidator({
+            required: true,
+            validate: [
+              voyagerValidator,
+              value => {
+                if (value.age < 16)
+                  throw new ValidationError('you\'re too young to drive!');
+              },
+            ],
+          }),
+        });
+
+        await expect(carValidator({
+            brand: 'takumi',
+            tank: 42.3,
+            driver: { name: 'Nils', age: 12 },
+          })).to.be.rejectedWith(/too young/);
+      });
+
+    });
+
+    it('parameterized validators', async () => {
+      const carValidator = Validator({
+        ...carValidatorBrandTank,
+        tank: ValueValidator({
+          type: 'number',
+          validate: (value, opts) => {
+            if (value < 0)
+              throw new ValidationError('this field cannot be negative');
+
+            if (value > opts.tankMax)
+              throw new ValidationError('this field cannot be over ' + opts.tankMax);
+
+            return opts.tankRound ? Math.round(value) : value;
+          },
+        }),
+      });
+
+      expect(await carValidator({ brand: 'twingo', tank: 43.2 }, { tankMax: 100, tankRound: true })).to.deep.eql({
+        brand: 'twingo',
+        tank: 43,
+      });
+
+      await expect(carValidator({ brand: 'twingo', tank: 123.4 }, { tankMax: 100, tankRound: false })).to.be.rejectedWith(ValidationErrors)
+        .then(e => {
+          expect(e.errors).to.have.lengthOf(1);
+          expect(e.errors[0]).to.match(/over 100/);
+        });
+    });
+
+    it('partial validation ', async () => {
+      const carValidator = Validator({
+        brand: ValueValidator({ type: 'string', required: true }),
+        tank: ValueValidator({ type: 'number', required: true }),
+      });
+
+      const myCar = await carValidator({ tank: 51 }, { partial: true });
+
+      expect(myCar).to.deep.eql({ brand: undefined, tank: 51 });
     });
 
   });
