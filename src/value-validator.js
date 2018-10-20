@@ -44,16 +44,23 @@ const ValueValidator = module.exports = field => async (data, opts = DEFAULT_OPT
 
   const validateData = async data => {
     const callValidate = async (data, validate) => {
-      const validated = await validate(data, opts);
+      try {
+        const validated = await validate(data, opts);
+  
+        // call validateData?
+        if (typeof validated === 'function')
+          return await callValidate(data, validated);
 
-      // call validateData?
-      if (typeof validated === 'function')
-        return await callValidate(data, validated);
+        if (validated !== undefined)
+          return validated;
 
-      if (validated !== undefined)
-        return validated;
+        return data;
+      } catch (e) {
+        if (type && !isPrimitiveType(type) && e instanceof InvalidValueTypeError)
+          e.type = type;
 
-      return data;
+        throw e;
+      }
     };
 
     if (validate instanceof Array)
@@ -79,9 +86,7 @@ const ValueValidator = module.exports = field => async (data, opts = DEFAULT_OPT
         if (!(e instanceof ValidationError))
           throw e;
 
-        if (!e.field)
-          e.field = `[${i}]`;
-
+        e.field = `[${i}]`;
         errors.push(e);
       }
     }

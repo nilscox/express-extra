@@ -190,7 +190,7 @@ const myCar = carValidator({
 
 The `validate` parameter of a ValueValidator can also be an array of
 validators. In this case, the initial data value will be reduced through all
-the validators in `validate`.
+the validators.
 
 ```js
 const carValidator = Validator({
@@ -320,7 +320,7 @@ const myCar = await carValidator({
   },
   voyagers: [
     { name: 'Tom' },
-    { name: 'Jeanne', age: 27 },
+    { name: 'Jeanne', age: null },
   ],
 });
 
@@ -334,9 +334,31 @@ myCar = {
   },
   voyagers: [
     { name: 'Tom', age: undefined },
-    { name: 'Jeanne', age: 27 },
+    { name: 'Jeanne', age: null },
   ],
 }
+*/
+
+await carValidator({
+  brand: NaN,
+  tank: 5000,
+  driver: { age: -5 },
+  voyagers: [
+    { name: 'Mano', age: 10 },
+    { name: false, age: '10' },
+    null,
+  ],
+});
+
+/*
+ValidationErrors: 7 errors
+  brand => this field must be of type string
+  tank => this field cannot be over 100
+  driver.name => this field is required
+  driver.age => this field cannot be negative
+  voyagers.[1].name => this field must be of type string
+  voyagers.[1].age => this field must be of type number
+  voyagers.[2] => this field must be of type Object
 */
 ```
 
@@ -359,13 +381,12 @@ informations that you will need about how to validate the data, if necessary.
 ### Validator
 
 ```js
-Validator(fields: {[string]: Validator}, type?: string) => Validator
+Validator(fields: {[string]: Validator}) => Validator
 ```
 
 Create an object validator.
 
 - fields: an object mapping the keys of the expected object to validators
-- type (optional): a string representing the object's type
 
 The returned value is a Validator function that will check an object's fields
 against each fields validators, and return the validated value. If `many` is

@@ -2,7 +2,6 @@ class ExpressExtraError extends Error {
 
   constructor(status, message) {
     super(message);
-
     this.status = status;
   }
 
@@ -16,6 +15,23 @@ class BadRequestError extends ExpressExtraError {
 
   constructor(message) {
     super(400, message);
+  }
+
+}
+
+class NotFoundError extends ExpressExtraError {
+
+  constructor(resource) {
+    super(404, `${resource} not found`);
+    this.resource = resource;
+  }
+
+}
+
+class AuthorizationError extends ExpressExtraError {
+
+  constructor(message) {
+    super(401, 'unauthorized: ' + message);
   }
 
 }
@@ -39,21 +55,25 @@ class ValidationError extends BadRequestError {
 class ValidationErrors extends ValidationError {
 
   constructor(errors, field) {
+    let total = 0;
+
     const message = errors.reduce((arr, error) => {
       if (error instanceof ValidationError) {
         const json = error.toJSON();
 
         Object.keys(json).forEach(key => {
           arr.push(`  ${key} => ${json[key]}`);
+          total++;
         });
       } else {
         arr.push(error.message);
+        total++;
       }
 
       return arr;
     }, []).join('\n');
 
-    super('ValidationErrors:\n' + message, field);
+    super(`ValidationErrors: ${total} errors\n` + message, field);
     this.errors = errors;
   }
 
@@ -94,6 +114,8 @@ class InvalidValueTypeError extends ValidationError {
 module.exports = {
   ExpressExtraError,
   BadRequestError,
+  NotFoundError,
+  AuthorizationError,
   ValidationErrors,
   ValidationError,
   MissingValueError,

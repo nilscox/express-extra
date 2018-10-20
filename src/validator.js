@@ -1,13 +1,14 @@
+const ValueValidator = require('./value-validator');
 const { ValidationError, ValidationErrors, InvalidValueTypeError } = require('./errors');
 
-const Validator = module.exports = (fields, type = 'any') => {
+const Validator = module.exports = (fields) => {
 
   const validateArray = async (data, opts) => {
     const validated = [];
     const errors = [];
 
     if (!(data instanceof Array))
-      throw new InvalidValueTypeError(`Array<${type}>`);
+      throw new InvalidValueTypeError('Array');
 
     for (let i = 0; i < data.length; ++i) {
       try {
@@ -16,9 +17,7 @@ const Validator = module.exports = (fields, type = 'any') => {
         if (!(e instanceof ValidationError))
           throw e;
 
-        if (!e.field)
-          e.field = `[${i}]`;
-
+        e.field = `[${i}]`;
         errors.push(e);
       }
     }
@@ -35,7 +34,7 @@ const Validator = module.exports = (fields, type = 'any') => {
     const keys = Object.keys(fields);
 
     if (!(data instanceof Object))
-      throw new InvalidValueTypeError(type);
+      throw new InvalidValueTypeError('Object');
 
     for (let i = 0; i < keys.length; ++i) {
       const key = keys[i];
@@ -46,9 +45,7 @@ const Validator = module.exports = (fields, type = 'any') => {
         if (!(e instanceof ValidationError))
           throw e;
 
-        if (!e.field)
-          e.field = key;
-
+        e.field = key;
         errors.push(e);
       }
     }
@@ -60,8 +57,12 @@ const Validator = module.exports = (fields, type = 'any') => {
   };
 
   return async (data, opts = {}) => {
-    if (opts.many)
-      return await validateArray(data, { ...opts, many: false });
+    if (opts.many) {
+      return await ValueValidator({
+        many: true,
+        validate: validateObject,
+      })(data, { ...opts, many: false });
+    }
     else
       return await validateObject(data, opts);
   };

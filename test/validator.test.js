@@ -71,9 +71,9 @@ describe('validator', () => {
         many: true,
         required: true,
       }),
-    }, 'Item');
+    });
 
-    it('should validate an single object using validate', async () => {
+    it('should validate an single object using ValueValidator', async () => {
 
       expect(await itemValidator({ foo: 'foo', bar: 42, baz: true, qux: [1, 2, 3] })).to.deep.eql({ foo: 'foo', bar: 42, baz: true, qux: [1, 2, 3] });
       expect(await itemValidator({ bar: 42, qux: [1, 2, 3] })).to.deep.eql({ foo: undefined, bar: 42, baz: true, baz: undefined, qux: [1, 2, 3] });
@@ -82,7 +82,7 @@ describe('validator', () => {
       await expect(itemValidator('salut')).to.be.rejectedWith(InvalidValueTypeError)
         .then(e => {
           expect(e).to.have.property('field', undefined);
-          expect(e).to.have.property('type', 'Item');
+          expect(e).to.have.property('type', 'Object');
         });
       
       await expect(itemValidator({ foo: null, bar: 42, baz: true, qux: [1, 2, 3] })).to.be.rejectedWith(ValidationErrors)
@@ -119,7 +119,7 @@ describe('validator', () => {
         });
     });
 
-    it('should validate multiple objects using validate', async () => {      
+    it('should validate multiple objects using ValueValidator', async () => {      
       expect(await itemValidator([
         { foo: 'foo', bar: 42, baz: null, qux: [] },
         { bar: 69, baz: false, qux: [0, 0] },
@@ -131,7 +131,7 @@ describe('validator', () => {
       await expect(itemValidator('salut', { many: true })).to.be.rejectedWith(InvalidValueTypeError)
         .then(e => {
           expect(e).to.have.property('field', undefined);
-          expect(e).to.have.property('type', 'Array<Item>');
+          expect(e).to.have.property('type', 'Array');
         });
 
       await expect(itemValidator([
@@ -200,7 +200,7 @@ describe('validator', () => {
           expect(e.errors).to.have.lengthOf(1);
           expect(e.errors[0]).to.be.an.instanceof(InvalidValueTypeError);
           expect(e.errors[0]).to.have.property('field', 'item');
-          expect(e.errors[0]).to.have.property('type', 'Item');
+          expect(e.errors[0]).to.have.property('type', 'Object');
         });
 
       await expect(thingValidator({ count: 1, item: { foo: NaN, bar: 2, qux: NaN, } })).to.be.rejectedWith(ValidationErrors)
@@ -256,6 +256,46 @@ describe('validator', () => {
         });
     });
 
+    it('should set the correct type when using nested validators', async () => {
+      const thingValidator = Validator({
+        item: ValueValidator({
+          type: 'Item',
+          validate: itemValidator,
+        }),
+        items: ValueValidator({
+          type: 'Item',
+          many: true,
+          validate: itemValidator,
+        }),
+        items2: ValueValidator({
+          type: 'Item',
+          many: true,
+          validate: itemValidator,
+        }),
+      });
+
+      await expect(thingValidator({ item: true, items: true, items2: [true] })).to.be.rejectedWith(ValidationErrors)
+        .then(e => {
+          expect(e.errors).to.have.lengthOf(3);
+
+          expect(e.errors[0]).to.be.an.instanceof(InvalidValueTypeError);
+          expect(e.errors[0]).to.have.property('field', 'item');
+          expect(e.errors[0]).to.have.property('type', 'Item');
+
+          expect(e.errors[1]).to.be.an.instanceof(InvalidValueTypeError);
+          expect(e.errors[1]).to.have.property('field', 'items');
+          expect(e.errors[1]).to.have.property('type', 'Array<Item>');
+
+          expect(e.errors[2]).to.be.an.instanceof(ValidationErrors);
+          expect(e.errors[2]).to.have.property('field', 'items2');
+          expect(e.errors[2].errors).to.have.lengthOf(1);
+
+          expect(e.errors[2].errors[0]).to.be.an.instanceof(InvalidValueTypeError);
+          expect(e.errors[2].errors[0]).to.have.property('field', '[0]');
+          expect(e.errors[2].errors[0]).to.have.property('type', 'Item');
+        });
+    });
+
     it('should validate an object using a recursive validator', async () => {
       const recursiveValidator = Validator({
         single: ValueValidator({
@@ -267,7 +307,7 @@ describe('validator', () => {
           many: true,
           validate: () => recursiveValidator,
         }),
-      }, 'Recuuuursion');
+      });
 
       expect(await recursiveValidator({})).to.deep.eql({ single: undefined, multiple: undefined });
 
@@ -303,10 +343,7 @@ describe('validator', () => {
         ],
       });
 
-      await expect(recursiveValidator(NaN)).to.be.rejectedWith(InvalidValueTypeError)
-        .then(e => {
-          expect(e.type).to.eql('Recuuuursion');
-        });
+      await expect(recursiveValidator(NaN)).to.be.rejectedWith(InvalidValueTypeError);
 
       await expect(recursiveValidator({
         single: null,
@@ -329,7 +366,7 @@ describe('validator', () => {
 
           expect(e.errors[0].errors[0].errors[0]).to.be.an.instanceof(InvalidValueTypeError);
           expect(e.errors[0].errors[0].errors[0]).to.have.property('field', 'single');
-          expect(e.errors[0].errors[0].errors[0]).to.have.property('type', 'Recuuuursion');
+          expect(e.errors[0].errors[0].errors[0]).to.have.property('type', 'Object');
 
           expect(e.errors[0].errors[0].errors[1]).to.be.an.instanceof(InvalidValueTypeError);
           expect(e.errors[0].errors[0].errors[1]).to.have.property('field', 'multiple');
@@ -380,7 +417,7 @@ describe('validator', () => {
       });
     });
 
-    it('should partially validate an object using validate', async () => {
+    it('should partially validate an object using ValueValidator', async () => {
       expect(await itemValidator({}, { partial: true }))
         .to.deep.eql({ foo: undefined, bar: undefined, baz: undefined, qux: undefined });
     });
@@ -502,7 +539,7 @@ describe('validator', () => {
         },
         voyagers: [
           { name: 'Tom' },
-          { name: 'Jeanne', age: 27 },
+          { name: 'Jeanne', age: null },
         ],
       });
 
@@ -515,9 +552,30 @@ describe('validator', () => {
         },
         voyagers: [
           { name: 'Tom', age: undefined },
-          { name: 'Jeanne', age: 27 },
+          { name: 'Jeanne', age: null },
         ],
       });
+
+      await expect(carValidator({
+          brand: NaN,
+          tank: 5000,
+          driver: { age: -5 },
+          voyagers: [
+            { name: 'Mano', age: 10 },
+            { name: false, age: '10' },
+            null,
+          ],
+        }, { tankMax: 100 })).to.be.rejectedWith(ValidationErrors)
+        .then(e => {
+          expect(e.message).to.eql(`ValidationErrors: 7 errors
+  brand => this field must be of type string
+  tank => this field cannot be over 100
+  driver.name => this field is required
+  driver.age => this field cannot be negative
+  voyagers.[1].name => this field must be of type string
+  voyagers.[1].age => this field must be of type number
+  voyagers.[2] => this field must be of type Object`);
+        });
     });
 
     it('object validation', async () => {
