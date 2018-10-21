@@ -3,7 +3,7 @@ const { Validator, ValueValidator, errors } = require('../index');
 
 const { ValidationError, ValidationErrors, InvalidValueTypeError, MissingValueError } = errors;
 
-describe('validator', () => {
+describe('Validator', () => {
 
   describe('without ValueValidator', () => {
 
