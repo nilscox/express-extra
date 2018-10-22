@@ -8,18 +8,24 @@ ExpressExtra validation system works with the concept of *Validator*, a
 function that accepts some data and returns the validated value, throwing
 exceptions if the validation fails.
 
+- see the [full example](#full-example) for an overview of the validation system
+- read the [API](#api)
+
+## Using validators
+
 A **validator** is a *function* that takes a piece of data and an options
 object, and returns the validated value. It must throw an instance of
-ValidationError or one of its sub-class if the validation fails.
+`ValidationError` or one of its sub-class if the validation fails.
 
 ```js
 Validator: (data: any, opts: {}) => (validated: any)
 ```
 
-- [see the full example](#full-example) for an overview of the validation system
-- [read the API](#api).
+Two functions are provided by this module to help you create validator
+functions:
 
-## Using validators
+- `Validator`: create an object validator
+- `ValueValidator`: create a single value validator
 
 ### Object validation
 
@@ -29,8 +35,8 @@ objects), respect a given set of rules. It can be created using the
 expected object to a function that will be invoked with the data to validate.
 
 If a condition is not met on the data to validate, the validation function must
-throw an instance of ValidationError, or one of its children. See
-[errors](#errors). The function must return the validated value.
+throw an instance of ValidationError, or one of its sub-class. The function
+must return the validated value.
 
 ```js
 const { Validator } = require('express-extra');
@@ -63,15 +69,15 @@ const carValidator = Validator({
 
 `carValidator` is an *object validator*, a function verifying that an object
 contains two keys : "brand", a non-empty string and "tank", a positive number
-which can be ommited. If extra fields are given, they will be discarded.
+(which can be ommited). If extra fields are given, they will be discarded.
 
 ```js
 const myCar = await carValidator({ brand: 'peugeot', tank: 43.2, speed: 123 });
 // myCar = { brand: 'peugeot', tank: 43 }
 ```
 
-To validate an array of objects, we should set `many` to `true` in the
-validator's options.
+To validate an array of objects, we can set `many` to `true` in the validator's
+options.
 
 ```js
 const myCars = await carValidator([car1, car2, car3], { many: true });
