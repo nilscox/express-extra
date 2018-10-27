@@ -39,7 +39,7 @@ adminAuthorizer({ isAdmin: true }); // ok
 adminAuthorizer({ isAdmin: false }); // fails!
 ```
 
-If the function returns false, the AuthorizationError will be created with an
+If the function returns `false`, the AuthorizationError will be created with an
 optional message. The same authorizer can be written as:
 
 ```js
@@ -49,9 +49,9 @@ const adminAuthorizer = Authorizer(data => data.isAdmin === true, 'you must be a
 ### Logical operators
 
 Authorizers can be combined with logical operators using the `extra.and` and
-`extra.or` functions. They both expect an array of authorizers as only
-parameter. There is also a `extra.not` function that will negate a given
-authorizer.
+`extra.or` functions. They both expect an array of authorizers as parameter,
+and an optional message. There is also a `extra.not` function that will negate
+a given authorizer.
 
 ```js
 const isSignedIn = Authorizer(data => data.user !== undefined);
@@ -66,7 +66,7 @@ const canCreateUser = or([
 const canDeleteUser = and([
   isSignedIn,
   isAdmin,
-]);
+], 'you cannot delete a user');
 
 await canCreateUser({}); // ok
 await canCreateUser({ user: true, admin: true }); // ok

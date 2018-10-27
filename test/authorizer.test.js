@@ -6,230 +6,452 @@ const { and, or, not } = Authorizer;
 
 describe('Authorizer', () => {
 
-  it('should call an authorizer function', async () => {
-    let called = [false, false, false];
+  describe('authorizer function', () => {
 
-    const authorize1 = Authorizer((data) => {
-      called[0] = true;
-      expect(data).to.have.property('pi', 3.1);
+    it('should call an authorizer function 1', async () => {
+      let called = false;
+
+      const authorize = Authorizer((data) => {
+        called = true;
+        expect(data).to.have.property('pi', 3.1);
+      });
+
+      await expect(authorize({ pi: 3.1 })).to.be.fulfilled;
+      expect(called).to.be.true;
     });
 
-    const authorize2 = Authorizer((data) => {
-      called[1] = true;
-      expect(data).to.have.property('pi', 3.1);
-      throw new AuthorizationError();
+    it('should call an authorizer function 2', async () => {
+      let called = false;
+
+      const authorize = Authorizer((data) => {
+        called = true;
+        expect(data).to.have.property('pi', 3.1);
+        throw new AuthorizationError();
+      });
+
+      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith(AuthorizationError);
+      expect(called).to.be.true;
     });
 
-    const authorize3 = Authorizer((data) => {
-      called[2] = true;
-      expect(data).to.have.property('pi', 3.1);
-      return false;
-    }, 'some message');
+    it('should call an authorizer function 3', async () => {
+      let called = false;
 
-    await expect(authorize1({ pi: 3.1 })).to.be.fulfilled;
-    expect(called[0]).to.be.true;
+      const authorize = Authorizer((data) => {
+        called = true;
+        expect(data).to.have.property('pi', 3.1);
+        return false;
+      }, 'some message');
 
-    await expect(authorize2({ pi: 3.1 })).to.be.rejectedWith(AuthorizationError);
-    expect(called[1]).to.be.true;
-
-    await expect(authorize3({ pi: 3.1 })).to.be.rejectedWith('some message');
-    expect(called[2]).to.be.true;
-  });
-
-  it('should process an authorizer array', async () => {
-    let calleds = [[false, false], [false, false], [false, false]];
-
-    const authorize1 = Authorizer([
-      (data) => calleds[0][0] = true,
-      (data) => calleds[0][1] = true,
-    ]);
-
-    const authorize2 = Authorizer([
-      (data) => {
-        calleds[1][0] = true;
-        throw new AuthorizationError();
-      },
-      (data) => calleds[1][1] = true,
-    ]);
-
-    const authorize3 = Authorizer([
-      (data) => calleds[2][0] = true,
-      (data) => {
-        calleds[2][1] = true;
-        throw new AuthorizationError();
-      },
-    ]);
-
-    await expect(authorize1({ pi: 3.1 })).to.be.fulfilled;
-    expect(calleds[0]).to.deep.eql([true, true]);
-
-    await expect(authorize2({ pi: 3.1 })).to.be.rejectedWith(AuthorizationError);
-    expect(calleds[1]).to.deep.eql([true, false]);
-
-    await expect(authorize3({ pi: 3.1 })).to.be.rejectedWith(AuthorizationError);
-    expect(calleds[2]).to.deep.eql([true, true]);
-  });
-
-  it('should process an authorize with logical not', async () => {
-    let called = [false, false, false];
-
-    const authorize1 = not((data) => {
-      called[0] = true;
-      expect(data).to.have.property('pi', 3.1);
+      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith('some message');
+      expect(called).to.be.true;
     });
 
-    const authorize2 = not((data) => {
-      called[1] = true;
-      expect(data).to.have.property('pi', 3.1);
-      throw new AuthorizationError();
+  });
+
+  describe('authorizer array', () => {
+
+    it('should process an authorizer array, ok', async () => {
+      const calleds = [false, false];
+
+      const authorize = Authorizer([
+        (data) => calleds[0] = true,
+        (data) => calleds[1] = true,
+      ]);
+
+      await expect(authorize({ pi: 3.1 })).to.be.fulfilled;
+      expect(calleds).to.deep.eql([true, true]);
     });
 
-    const authorize3 = not((data) => {
-      called[2] = true;
-      expect(data).to.have.property('pi', 3.1);
-    }, 'some message');
+    it('should process an authorizer array, first fail', async () => {
+      const calleds = [false, false];
 
-    await expect(authorize1({ pi: 3.1 })).to.be.rejectedWith(AuthorizationError);
-    expect(called[0]).to.be.true;
+      const authorize = Authorizer([
+        (data) => {
+          calleds[0] = true;
+          throw new AuthorizationError();
+        },
+        (data) => calleds[1] = true,
+      ]);
 
-    await expect(authorize2({ pi: 3.1 })).to.be.fulfilled;
-    expect(called[1]).to.be.true;
+      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith(AuthorizationError);
+      expect(calleds).to.deep.eql([true, false]);
+    });
 
-    await expect(authorize3({ pi: 3.1 })).to.be.rejectedWith('some message');
-    expect(called[2]).to.be.true;
+    it('should process an authorizer array, first fail with a message', async () => {
+      const calleds = [false, false];
+
+      const authorize = Authorizer([
+        (data) => {
+          calleds[0] = true;
+          return false;
+        },
+        (data) => calleds[1] = true,
+      ], 'some message');
+
+      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith('some message');
+      expect(calleds).to.deep.eql([true, false]);
+    });
+
+    it('should process an authorizer array, second fail', async () => {
+      const calleds = [false, false];
+
+      const authorize = Authorizer([
+        (data) => calleds[0] = true,
+        (data) => {
+          calleds[1] = true;
+          throw new AuthorizationError();
+        },
+      ]);
+
+      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith(AuthorizationError);
+      expect(calleds).to.deep.eql([true, true]);
+    });
+
+    it('should process an authorizer array, second fail with a message', async () => {
+      const calleds = [false, false];
+      
+      const authorize = Authorizer([
+        (data) => calleds[0] = true,
+        (data) => {
+          calleds[1] = true;
+          return false;
+        },
+      ], 'some message');
+
+      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith('some message');
+      expect(calleds).to.deep.eql([true, true]);
+    });
+
   });
 
-  it('should process an authorizer with logical and', async () => {
-    let calleds = [[false, false], [false, false], [false, false], [false, false]];
+  describe('logical not', () => {
 
-    const authorize1 = Authorizer(and([
-      (data) => calleds[0][0] = true,
-      (data) => calleds[0][1] = true,
-    ]));
+    it('should process a logical not, fail', async () => {
+      let called = false;
 
-    const authorize2 = Authorizer(and([
-      (data) => {
-        calleds[1][0] = true;
+      const authorize = not((data) => {
+        called = true;
+        expect(data).to.have.property('pi', 3.1);
+      });
+
+      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith(AuthorizationError);
+      expect(called).to.be.true;
+    });
+
+    it('should process a logical not, fail with a message', async () => {
+      let called = false;
+
+      const authorize = not((data) => {
+        called = true;
+        expect(data).to.have.property('pi', 3.1);
+      }, 'some message');
+
+      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith('some message');
+      expect(called).to.be.true;
+    });
+
+    it('should process a logical not, ok', async () => {
+      let called = false;
+
+      const authorize = not((data) => {
+        called = true;
+        expect(data).to.have.property('pi', 3.1);
         throw new AuthorizationError();
-      },
-      (data) => calleds[1][1] = true,
-    ]));
+      });
 
-    const authorize3 = Authorizer(and([
-      (data) => calleds[2][0] = true,
-      (data) => {
-        calleds[2][1] = true;
-        throw new AuthorizationError();
-      },
-    ]));
+      await expect(authorize({ pi: 3.1 })).to.be.fulfilled;
+      expect(called).to.be.true;
+    });
 
-    const authorize4 = Authorizer(and([
-      (data) => {
-        calleds[3][0] = true;
-        throw new AuthorizationError();
-      },
-      (data) => {
-        calleds[3][1] = true;
-        throw new AuthorizationError();
-      },
-    ]));
-
-    await expect(authorize1({ pi: 3.1 })).to.be.fulfilled;
-    expect(calleds[0]).to.deep.eql([true, true]);
-
-    await expect(authorize2({ pi: 3.1 })).to.be.rejectedWith(AuthorizationError);
-    expect(calleds[1]).to.deep.eql([true, false]);
-
-    await expect(authorize3({ pi: 3.1 })).to.be.rejectedWith(AuthorizationError);
-    expect(calleds[2]).to.deep.eql([true, true]);
-
-    await expect(authorize4({ pi: 3.1 })).to.be.rejectedWith(AuthorizationError);
-    expect(calleds[3]).to.deep.eql([true, false]);
   });
 
-  it('should process an authorizer with logical or', async () => {
-    let calleds = [[false, false], [false, false], [false, false], [false, false]];
+  describe('logical and', () => {
 
-    const authorize1 = Authorizer(or([
-      (data) => calleds[0][0] = true,
-      (data) => calleds[0][1] = true,
-    ]));
+    it('should process a logical and, ok', async () => {
+      const calleds = [false, false];
 
-    const authorize2 = Authorizer(or([
-      (data) => {
-        calleds[1][0] = true;
-        throw new AuthorizationError();
-      },
-      (data) => calleds[1][1] = true,
-    ]));
+      const authorize = and([
+        (data) => calleds[0] = true,
+        (data) => calleds[1] = true,
+      ]);
 
-    const authorize3 = Authorizer(or([
-      (data) => calleds[2][0] = true,
-      (data) => {
-        calleds[2][1] = true;
-        throw new AuthorizationError();
-      },
-    ]));
+      await expect(authorize({ pi: 3.1 })).to.be.fulfilled;
+      expect(calleds).to.deep.eql([true, true]);
+    });
 
-    const authorize4 = Authorizer(or([
-      (data) => {
-        calleds[3][0] = true;
-        throw new AuthorizationError();
-      },
-      (data) => {
-        calleds[3][1] = true;
-        throw new AuthorizationError();
-      },
-    ]));
+    it('should process a logical and, first fail', async () => {
+      const calleds = [false, false];
+ 
+      const authorize = and([
+        (data) => {
+          calleds[0] = true;
+          throw new AuthorizationError();
+        },
+        (data) => calleds[1] = true,
+      ]);
 
-    await expect(authorize1({ pi: 3.1 })).to.be.fulfilled;
-    expect(calleds[0]).to.deep.eql([true, false]);
+      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith(AuthorizationError);
+      expect(calleds).to.deep.eql([true, false]);
+    });
 
-    await expect(authorize2({ pi: 3.1 })).to.be.fulfilled;
-    expect(calleds[1]).to.deep.eql([true, true]);
+    it('should process a logical and, first fail with a message', async () => {
+      const calleds = [false, false];
+ 
+      const authorize = and([
+        (data) => {
+          calleds[0] = true;
+          return false;
+        },
+        (data) => calleds[1] = true,
+      ], 'some message');
 
-    await expect(authorize3({ pi: 3.1 })).to.be.fulfilled;
-    expect(calleds[2]).to.deep.eql([true, false]);
+      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith('some message');
+      expect(calleds).to.deep.eql([true, false]);
+    });
 
-    await expect(authorize4({ pi: 3.1 })).to.be.rejectedWith(AuthorizationError);
-    expect(calleds[3]).to.deep.eql([true, true]);
+    it('should process a logical and, second fail', async () => {
+      const calleds = [false, false];
+
+      const authorize = and([
+        (data) => calleds[0] = true,
+        (data) => {
+          calleds[1] = true;
+          throw new AuthorizationError();
+        },
+      ]);
+
+      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith(AuthorizationError);
+      expect(calleds).to.deep.eql([true, true]);
+    });
+
+    it('should process a logical and, second fail with a message', async () => {
+      const calleds = [false, false];
+
+      const authorize = and([
+        (data) => calleds[0] = true,
+        (data) => {
+          calleds[1] = true;
+          return false;
+        },
+      ], 'some message');
+
+      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith('some message');
+      expect(calleds).to.deep.eql([true, true]);
+    });
+
+    it('should process a logical and, both fail', async () => {
+      const calleds = [false, false];
+
+      const authorize = and([
+        (data) => {
+          calleds[0] = true;
+          throw new AuthorizationError();
+        },
+        (data) => {
+          calleds[1] = true;
+          throw new AuthorizationError();
+        },
+      ]);
+
+      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith(AuthorizationError);
+      expect(calleds).to.deep.eql([true, false]);
+    });
+
+    it('should process a logical and, both fail with a message', async () => {
+      const calleds = [false, false];
+
+      const authorize = and([
+        (data) => {
+          calleds[0] = true;
+          return false;
+        },
+        (data) => {
+          calleds[1] = true;
+          return false;
+        },
+      ], 'some message');
+
+      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith('some message');
+      expect(calleds).to.deep.eql([true, false]);
+    });
+
   });
 
-  it('should process an authorizer with mixed and and or', async () => {
-    let calleds = [[false, false, false], [false, false, false, false]];
-    const authorize1 = Authorizer(and([
-      (data) => calleds[0][0] = true,
-      or([
-        (data) => calleds[0][1] = true,
-        (data) => calleds[0][2] = true,
-      ]),
-    ]));
+  describe('logical or', () => {
 
-    const authorize2 = Authorizer(or([
-      (data) => {
-        calleds[1][0] = true;
-        throw new AuthorizationError();
-      },
-      and([
-        (data) => calleds[1][1] = true,
-        (data) => calleds[1][2] = true,
-      ]),
-      (data) => {
-        calleds[1][3] = true;
-        throw new AuthorizationError();
-      },
-    ]));
+    it('should process a logical or, ok', async () => {
+      const calleds = [false, false];
 
-    await expect(authorize1({ pi: 3.1 })).to.be.fulfilled;
-    expect(calleds[0]).to.deep.eql([true, true, false]);
+      const authorize = or([
+        (data) => calleds[0] = true,
+        (data) => calleds[1] = true,
+      ]);
 
-    await expect(authorize2({ pi: 3.1 })).to.be.fulfilled;
-    expect(calleds[1]).to.deep.eql([true, true, true, false]);
+      await expect(authorize({ pi: 3.1 })).to.be.fulfilled;
+      expect(calleds).to.deep.eql([true, false]);
+    });
+
+    it('should process a logical or, first fail', async () => {
+      const calleds = [false, false];
+ 
+      const authorize = or([
+        (data) => {
+          calleds[0] = true;
+          throw new AuthorizationError();
+        },
+        (data) => calleds[1] = true,
+      ]);
+
+      await expect(authorize({ pi: 3.1 })).to.be.fulfilled;
+      expect(calleds).to.deep.eql([true, true]);
+    });
+
+    it('should process a logical or, first fail with a message', async () => {
+      const calleds = [false, false];
+ 
+      const authorize = or([
+        (data) => {
+          calleds[0] = true;
+          return false;
+        },
+        (data) => calleds[1] = true,
+      ], 'some message');
+
+      await expect(authorize({ pi: 3.1 })).to.be.fulfilled;
+      expect(calleds).to.deep.eql([true, true]);
+    });
+
+    it('should process a logical or, second fail', async () => {
+      const calleds = [false, false];
+
+      const authorize = or([
+        (data) => calleds[0] = true,
+        (data) => {
+          calleds[1] = true;
+          throw new AuthorizationError();
+        },
+      ]);
+
+      await expect(authorize({ pi: 3.1 })).to.be.fulfilled;
+      expect(calleds).to.deep.eql([true, false]);
+    });
+
+    it('should process a logical or, second fail with a message', async () => {
+      const calleds = [false, false];
+
+      const authorize = or([
+        (data) => calleds[0] = true,
+        (data) => {
+          calleds[1] = true;
+          return false;
+        },
+      ], 'some message');
+
+      await expect(authorize({ pi: 3.1 })).to.be.fulfilled;
+      expect(calleds).to.deep.eql([true, false]);
+    });
+
+    it('should process a logical or, both fail', async () => {
+      const calleds = [false, false];
+
+      const authorize = or([
+        (data) => {
+          calleds[0] = true;
+          throw new AuthorizationError();
+        },
+        (data) => {
+          calleds[1] = true;
+          throw new AuthorizationError();
+        },
+      ]);
+
+      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith(AuthorizationError);
+      expect(calleds).to.deep.eql([true, true]);
+    });
+
+    it('should process a logical or, both fail with a message', async () => {
+      const calleds = [false, false];
+
+      const authorize = or([
+        (data) => {
+          calleds[0] = true;
+          return false;
+        },
+        (data) => {
+          calleds[1] = true;
+          return false;
+        },
+      ], 'some message');
+
+      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith('some message');
+      expect(calleds).to.deep.eql([true, true]);
+    });
+
   });
 
-  it('should not process an invalid object', async () => {
-    await expect(Authorizer({})({ pi: 3.1 })).to.be.rejectedWith(/missing operator/);
-    await expect(Authorizer({ op: true })({ pi: 3.1 })).to.be.rejectedWith(/invalid operator true/);
+  describe('mixed logical operators', () => {
+  
+    it('should process mixed logical operators 1', async () => {
+      const calleds = [false, false, false, false];
+      const authorize = Authorizer(and([
+        (data) => calleds[0] = true,
+        not((data) => { calleds[1] = true; return false; }),
+        or([
+          (data) => calleds[2] = true,
+          (data) => calleds[3] = true,
+        ]),
+      ]));
+
+      await expect(authorize({ pi: 3.1 })).to.be.fulfilled;
+      expect(calleds).to.deep.eql([true, true, true, false]);
+    });
+
+    it('should process mixed logical operators 2', async () => {
+      let called = false;
+
+      const authorize = or([
+        and([
+          (data) => { called = true; return false; },
+        ], 'other message'),
+      ], 'some message');
+
+      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith('some message');
+      expect(called).to.be.true;
+    });
+
+    it('should process mixed logical operators 3', async () => {
+      const calleds = [false, false, false, false, false, false, false];
+
+      const authorize = or([
+        (data) => {
+          calleds[0] = true;
+          throw new AuthorizationError();
+        },
+        and([
+          (data) => calleds[1] = true,
+          not((data) => { calleds[2] = true; throw new AuthorizationError(); }),
+          or([
+            (data) => { calleds[3] = true; return false; },
+            (data) => calleds[4] = true,
+            (data) => calleds[5] = true,
+          ]),
+          (data) => { calleds[6] = true; return false; },
+        ], 'other message'),
+      ], 'some message');
+
+      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith('some message');
+      expect(calleds).to.deep.eql([true, true, true, true, true, false, true]);
+    });
+
+  });
+
+  describe('invalid states', () => {
+
+    it('should not process an invalid object', async () => {
+      await expect(Authorizer({})({ pi: 3.1 })).to.be.rejectedWith(/missing operator/);
+      await expect(Authorizer({ op: true })({ pi: 3.1 })).to.be.rejectedWith(/invalid operator true/);
+    });
+
   });
 
   describe('readme examples', () => {
