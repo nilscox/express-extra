@@ -7,7 +7,7 @@ object of your choice), and which must throw an `AuthorizationError` if the
 context does not meet the requirements.
 
 - see the [full example](#full-example) for an overview of the authorization system
-- read the [API](#api)
+- read the [API](./api.md#authorization)
 
 ## Using authorizers
 
@@ -108,64 +108,3 @@ await canEditPostAuthorizer({ user: 8, post: { owner: 4 } }); // fail!
 await canEditPostAuthorizer({ post: { owner: 8 } }); // fail! "you must be owner"
 await canEditPostAuthorizer({ admin: true, post: { owner: 8 } }); // ok
 ```
-
-## API
-
-### Authorizer type
-
-```js
-Authorizer: (data: any) => any | Promise<any>
-```
-
-An Authorizer is a function that takes a piece of data, and must throw (or
-reject with) an instance of AuthorizationError (or one of its sub-class) if the
-data does not match the set of permissions. If the returned (or resolved) value
-is `false`, then an instance of AuthorizationError will be thrown. It is
-otherwise is discarded.
-
-### Authorize
-
-```js
-Authorize(authorizer: Authorizer | Array<Authorizer>, message?: string) => Authorizer
-```
-
-Create an authorizer function.
-
-- authorizer: the authorizer function or array
-- message (optional): the error message if an authorizer function fails by returning false
-
-If the authorizer is an array, it will be treated as a logical and.
-
-### Logical not
-
-```js
-Authorize.not(authorizer: Authorizer, message?: string) => Authorizer
-```
-
-- authorizer: the authorizer to negate
-- message (optional): the error message if the authorizer succeed
-
-Create an authorizer function that will succeed if the given authorizer fails.
-It will then throw an instance of `AuthorizationError`.
-
-### Logical or
-
-```js
-Authorize.or(authorizers: Array<Authorizer>) => Authorizer
-```
-
-- authorizers: the authorizers array
-
-Create an authorizer function that will succeed if at least one of the
-authorizers provided in its parameter succeeds.
-
-### Logical and
-
-```js
-Authorize.and(authorizers: Array<Authorizer>) => Authorizer
-```
-
-- authorizers: the authorizers array
-
-Create an authorizer function that will succeed if all the authorizers
-provided in its parameter succeeds.
