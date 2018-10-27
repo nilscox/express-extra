@@ -1,14 +1,30 @@
-/**
-Authorizer: (data) => ()
-*/
-
 const { AuthorizationError } = require('./errors');
 
-const Authorizer = module.exports = authorizer => {
+const not = (authorizer, message) => Authorizer(async data => {
+  let result = false;
+
+  try {
+    result = await authorizer(data);
+  } catch (e) {
+    if (!(e instanceof AuthorizationError))
+      throw e;
+  } finally {
+    if (result !== false)
+      throw new AuthorizationError(message);
+  }
+});
+
+const and = arr => Authorizer({ op: 'and', authorizer: arr });
+const or = arr => Authorizer({ op: 'or', authorizer: arr });
+
+const Authorizer = module.exports = (authorizer, message) => {
 
   const authorize = async data => {
 
-    const authorize_function = async (data, f) => await f(data);
+    const authorize_function = async (data, f) => {
+      if (await f(data) === false)
+        throw new AuthorizationError(message);
+    };
 
     const authorize_and = async (data, arr) => await Promise.mapSeries(arr, a => Authorizer(a)(data));
 
@@ -30,22 +46,17 @@ const Authorizer = module.exports = authorizer => {
         throw error;
     };
 
-    const authorize_object = (data, obj) => {
-      const keys = Object.keys(obj);
-      const arr = keys.map(op => data => {
-        switch (op) {
-        case 'or':
-          return authorize_or(data, obj[op]);
+    const authorize_object = async (data, obj) => {
+      const { op, authorizer: a } = authorizer;
 
-        case 'and':
-          return authorize_and(data, obj[op]);
-
-        default:
-          throw new Error('invalid operator ' + op);
-        }
-      });
-
-      return authorize_or(data, arr);
+      if (op === 'and')
+        await authorize_and(data, a);
+      else if (op === 'or')
+        await authorize_or(data, a);
+      else if (op === undefined)
+        throw new Error('authorizer: missing operator');
+      else
+        throw new Error('authorizer: invalid operator ' + op);
     };
 
     if (typeof authorizer === 'function')
@@ -53,8 +64,12 @@ const Authorizer = module.exports = authorizer => {
     else if (authorizer instanceof Array)
       await authorize_and(data, authorizer);
     else if (typeof authorizer === 'object')
-      await authorize_object(data, authorizer);
+      await authorize_object(data);
   };
 
   return authorize;
 };
+
+module.exports.not = not;
+module.exports.or = or;
+module.exports.and = and;
