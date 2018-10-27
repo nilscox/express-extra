@@ -24,16 +24,26 @@ async function.
 An **authorizer** is a *function* that takes a piece of data, and should throw
 an instance of `AuthorizationError` or one of its sub-class if the authorization
 fails. It can also return `false`, in which case the `AuthorizationError` will
-be thrown for you without a message.
+be thrown for you.
 
 > Note: the value given to the authorizer can be anything, though it will often
 > make sense to pass down the [request object](http://expressjs.com/en/4x/api.html#req).
 
 ```js
-const adminAuthorizer = Authorizer(data => data.isAdmin === true);
+const adminAuthorizer = Authorizer(data => {
+  if (data.isAdmin !== true)
+    throw new AuthorizationError('you must be an admin');
+});
 
 adminAuthorizer({ isAdmin: true }); // ok
 adminAuthorizer({ isAdmin: false }); // fails!
+```
+
+If the function returns false, the AuthorizationError will be created with an
+optional message. The same authorizer can be written as:
+
+```js
+const adminAuthorizer = Authorizer(data => data.isAdmin === true, 'you must be an admin');
 ```
 
 ### Logical operators
@@ -44,23 +54,19 @@ parameter. There is also a `extra.not` function that will negate a given
 authorizer.
 
 ```js
-const isSignedIn = data => data.user !== undefined;
+const isSignedIn = Authorizer(data => data.user !== undefined);
 const isNotSignedIn = not(isSignedIn);
-const isAdmin = data => data.admin === true;
+const isAdmin = Authorizer(data => data.admin === true);
 
-const canCreateUser = Authorizer(
-  or([
-    isNotSignedIn,
-    isAdmin,
-  ]),
-);
+const canCreateUser = or([
+  isNotSignedIn,
+  isAdmin,
+]);
 
-const canDeleteUser = Authorizer(
-  and([
-    isSignedIn,
-    isAdmin,
-  ]),
-);
+const canDeleteUser = and([
+  isSignedIn,
+  isAdmin,
+]);
 
 await canCreateUser({}); // ok
 await canCreateUser({ user: true, admin: true }); // ok

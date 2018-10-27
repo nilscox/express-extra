@@ -14,8 +14,8 @@ const not = (authorizer, message) => Authorizer(async data => {
   }
 });
 
-const and = arr => Authorizer({ op: 'and', authorizer: arr });
-const or = arr => Authorizer({ op: 'or', authorizer: arr });
+const and = (arr, message) => Authorizer({ op: 'and', authorizer: arr }, message);
+const or = (arr, message) => Authorizer({ op: 'or', authorizer: arr }, message);
 
 const Authorizer = module.exports = (authorizer, message) => {
 

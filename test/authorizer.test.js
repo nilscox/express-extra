@@ -263,29 +263,34 @@ describe('Authorizer', () => {
     });
 
     it('authorizer function', async () => {
-      const adminAuthorizer = Authorizer(data => data.isAdmin === true);
+      const adminAuthorizer1 = Authorizer(data => {
+        if (data.isAdmin !== true)
+          throw new AuthorizationError('you must be an admin');
+      });
 
-      await expect(adminAuthorizer({ isAdmin: true })).to.be.fulfilled;
-      await expect(adminAuthorizer({ isAdmin: false })).to.be.rejectedWith(AuthorizationError);
+      const adminAuthorizer2 = Authorizer(data => data.isAdmin === true, 'you must be an admin');
+
+      await expect(adminAuthorizer1({ isAdmin: true })).to.be.fulfilled;
+      await expect(adminAuthorizer1({ isAdmin: false })).to.be.rejectedWith(AuthorizationError);
+
+      await expect(adminAuthorizer2({ isAdmin: true })).to.be.fulfilled;
+      await expect(adminAuthorizer2({ isAdmin: false })).to.be.rejectedWith(AuthorizationError);
     });
 
     it('logical operators', async () => {
-      const isSignedIn = data => data.user !== undefined;
-      const isAdmin = data => data.admin === true;
+      const isSignedIn = Authorizer(data => data.user !== undefined);
+      const isNotSignedIn = not(isSignedIn);
+      const isAdmin = Authorizer(data => data.admin === true);
 
-      const canCreateUser = Authorizer(
-        or([
-          not(isSignedIn),
-          isAdmin,
-        ]),
-      );
+      const canCreateUser = or([
+        isNotSignedIn,
+        isAdmin,
+      ]);
 
-      const canDeleteUser = Authorizer(
-        and([
-          isSignedIn,
-          isAdmin,
-        ]),
-      );
+      const canDeleteUser = and([
+        isSignedIn,
+        isAdmin,
+      ]);
 
       await expect(canCreateUser({})).to.be.fulfilled;
       await expect(canCreateUser({ user: true, admin: true })).to.be.fulfilled;
