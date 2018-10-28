@@ -88,10 +88,17 @@ Create an object validator.
 - fields: an object mapping the keys of the expected object to validators
 
 The returned value is a Validator function that will check an object's fields
-against each fields validators, and return the validated value. If `many` is
-set to `true` in the validator's options, the expected data value is an array
-of object rather than a single one. Other values in `opts` will be forwarded
-to all fields validators.
+against each fields validators, and return the validated value. The `opts`
+object will be forwarded to all fields validators.
+
+The returned validator has a `many` auxilliary function, which validates an
+array of object instead of a single one.
+
+```js
+const validator = Validator(...);
+
+validator.many<T: any>: (data: Array<T>, opts: {}) => Array<T> | Promise<Array<T>>
+```
 
 ### ValueValidator
 

@@ -3,32 +3,7 @@ const { ValidationError, ValidationErrors, InvalidValueTypeError } = require('./
 
 const Validator = module.exports = (fields) => {
 
-  const validateArray = async (data, opts) => {
-    const validated = [];
-    const errors = [];
-
-    if (!(data instanceof Array))
-      throw new InvalidValueTypeError('Array');
-
-    for (let i = 0; i < data.length; ++i) {
-      try {
-        validated[i] = await validateObject(data[i], opts);
-      } catch (e) {
-        if (!(e instanceof ValidationError))
-          throw e;
-
-        e.field = `[${i}]`;
-        errors.push(e);
-      }
-    }
-
-    if (errors.length > 0)
-      throw new ValidationErrors(errors);
-
-    return validated;
-  };
-
-  const validateObject = async (data, opts) => {
+  const validateObject = async (data, opts = {}) => {
     const validated = {};
     const errors = [];
     const keys = Object.keys(fields);
@@ -56,14 +31,12 @@ const Validator = module.exports = (fields) => {
     return validated;
   };
 
-  return async (data, opts = {}) => {
-    if (opts.many) {
-      return await ValueValidator({
-        many: true,
-        validate: validateObject,
-      })(data, { ...opts, many: false });
-    }
-    else
-      return await validateObject(data, opts);
+  validateObject.many = (data, opts = {}) => {
+    return ValueValidator({
+      many: true,
+      validate: validateObject,
+    })(data, { ...opts, many: false });
   };
+
+  return validateObject;
 };

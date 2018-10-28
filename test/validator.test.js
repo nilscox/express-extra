@@ -50,6 +50,14 @@ describe('Validator', () => {
       expect(await itemValidator({ a: 5, b: 'foo' })).to.eql({ a: 5 });
     });
 
+    it('should validate multiple objects', async () => {
+      const itemValidator = Validator({
+        a: v => v,
+      });
+
+      expect(await itemValidator.many([{ a: 5 }, { a: 8 }])).to.deep.eql([{ a: 5 }, { a: 8 }]);
+    });
+
   });
 
   describe('with ValueValidator', () => {
@@ -120,24 +128,24 @@ describe('Validator', () => {
     });
 
     it('should validate multiple objects using ValueValidator', async () => {      
-      expect(await itemValidator([
+      expect(await itemValidator.many([
         { foo: 'foo', bar: 42, baz: null, qux: [] },
         { bar: 69, baz: false, qux: [0, 0] },
-      ], { many: true })).to.deep.eql([
+      ])).to.deep.eql([
         { foo: 'foo', bar: 42, baz: null, qux: [] },
         { foo: undefined, bar: 69, baz: false, qux: [0, 0] },
       ]);
 
-      await expect(itemValidator('salut', { many: true })).to.be.rejectedWith(InvalidValueTypeError)
+      await expect(itemValidator.many('salut')).to.be.rejectedWith(InvalidValueTypeError)
         .then(e => {
           expect(e).to.have.property('field', undefined);
           expect(e).to.have.property('type', 'Array');
         });
 
-      await expect(itemValidator([
+      await expect(itemValidator.many([
         { foo: 'foo', baz: null, qux: false },
         { bar: 69, baz: false, qux: [5, null, 5] },
-      ], { many: true })).to.be.rejectedWith(ValidationErrors)
+      ])).to.be.rejectedWith(ValidationErrors)
         .then(e => {
           expect(e.errors).to.have.lengthOf(2);
 
@@ -178,11 +186,11 @@ describe('Validator', () => {
 
       expect(await thingValidator({ count: 1, item: { bar: 2, qux: [3] } })).to.deep.eql({ count: 1, item: { foo: undefined, bar: 2, baz: undefined, qux: [3] } });
 
-      expect(await thingValidator([
+      expect(await thingValidator.many([
         { count: 1, item: { bar: 2, qux: [3] } },
         { count: -1 },
         { count: 6, item: { foo: 'yellow', bar: 2, baz: null, qux: [6, 6, 6] } },
-      ], { many: true })).to.deep.eql([
+      ])).to.deep.eql([
         { count: 1, item: { foo: undefined, bar: 2, baz: undefined, qux: [3] } },
         { count: -1, item: undefined },
         { count: 6, item: { foo: 'yellow', bar: 2, baz: null, qux: [6, 6, 6] } },
@@ -219,11 +227,11 @@ describe('Validator', () => {
           expect(e.errors[0].errors[1]).to.have.property('type', 'Array<number>');
         });
 
-      await expect(thingValidator([
+      await expect(thingValidator.many([
         { count: 1, item: { foo: 'hello', baz: null, qux: [3], } },
         { count: 0 },
         { count: 2, item: { bar: 2, qux: [1, 2, [3]] } },
-      ], { many: true })).to.be.rejectedWith(ValidationErrors)
+      ])).to.be.rejectedWith(ValidationErrors)
         .then(e => {
           expect(e.errors).to.have.lengthOf(2);
           
@@ -608,11 +616,11 @@ describe('Validator', () => {
 
       expect(myCar).to.deep.eql({ brand: 'peugeot', tank: 43 });
 
-      const myCars = await carValidator([
+      const myCars = await carValidator.many([
           { brand: 'peugeot', tank: 43.2, speed: 123 },
           { brand: 'ferrari' },
           { brand: 'batmobile', tank: 0 },
-        ], { many: true });
+        ]);
 
       expect(myCars).to.deep.eql([
           { brand: 'peugeot', tank: 43 },

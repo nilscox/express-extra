@@ -76,11 +76,11 @@ const myCar = await carValidator({ brand: 'peugeot', tank: 43.2, speed: 123 });
 // myCar = { brand: 'peugeot', tank: 43 }
 ```
 
-To validate an array of objects, we can set `many` to `true` in the validator's
-options.
+To validate an array of objects, we can use `validator.many` auxilliary
+function.
 
 ```js
-const myCars = await carValidator([car1, car2, car3], { many: true });
+const myCars = await carValidator.many([car1, car2, car3]);
 ```
 
 ### Single value validation
