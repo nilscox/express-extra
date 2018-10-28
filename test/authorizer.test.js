@@ -1,3 +1,4 @@
+const sinon = require('sinon');
 const expect = require('./expect');
 const { Authorizer, errors } = require('../index');
 
@@ -6,161 +7,121 @@ const { and, or, not } = Authorizer;
 
 describe('Authorizer', () => {
 
-  describe('authorizer function', () => {
+  let spies = [];
 
-    it('should call an authorizer function 1', async () => {
-      let called = false;
+  const addSpy = (spy, call) => {
+    spy.expected = call;
+    spies.push(spy);
+    return spy;
+  };
 
-      const authorize = Authorizer((data) => {
-        called = true;
-        expect(data).to.have.property('pi', 3.1);
-      });
+  const PASS = (call) => addSpy(sinon.spy(data => {
+    expect(data).to.deep.eql({ pi: 3.14 });
+  }), call);
 
-      await expect(authorize({ pi: 3.1 })).to.be.fulfilled;
-      expect(called).to.be.true;
-    });
+  const FALSE = (call) => addSpy(sinon.spy(data => {
+    expect(data).to.deep.eql({ pi: 3.14 });
+    return false;
+  }), call);
 
-    it('should call an authorizer function 2', async () => {
-      let called = false;
+  const THROW = (call, message) => addSpy(sinon.spy(data => {
+    expect(data).to.deep.eql({ pi: 3.14 });    
+    throw new AuthorizationError(message);
+  }), call);
 
-      const authorize = Authorizer((data) => {
-        called = true;
-        expect(data).to.have.property('pi', 3.1);
-        throw new AuthorizationError();
-      });
+  const test = async ({ authorize, payload = { pi: 3.14 }, rejectedWith }) => {
+    if (rejectedWith)
+      await expect(authorize(payload)).to.be.rejectedWith(rejectedWith);
+    else
+      await expect(authorize(payload)).to.be.fulfilled;
+  };
 
-      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith(AuthorizationError);
-      expect(called).to.be.true;
-    });
+  afterEach(() => {
+    const msg = (n, expect) => (expect ? 'Expected' : 'Didn\'t expect') + ' spy ' + (n + 1) + ' to be called';
 
-    it('should call an authorizer function 3', async () => {
-      let called = false;
-
-      const authorize = Authorizer((data) => {
-        called = true;
-        expect(data).to.have.property('pi', 3.1);
-        return false;
-      }, 'some message');
-
-      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith('some message');
-      expect(called).to.be.true;
-    });
-
+    spies.forEach((s, n) => expect(s.called).to.equal(s.expected, msg(n, s.expected)));
+    spies = [];
   });
 
-  describe('authorizer array', () => {
+  describe('authorizer function', () => {
 
-    it('should process an authorizer array, ok', async () => {
-      const calleds = [false, false];
+    it('should call an authorizer function, ok', async () => {
+      await test({
+        authorize: Authorizer(PASS(true)),
+      });
 
-      const authorize = Authorizer([
-        (data) => calleds[0] = true,
-        (data) => calleds[1] = true,
-      ]);
-
-      await expect(authorize({ pi: 3.1 })).to.be.fulfilled;
-      expect(calleds).to.deep.eql([true, true]);
+      await test({
+        authorize: Authorizer(PASS(true), 'some message'),
+      });
     });
 
-    it('should process an authorizer array, first fail', async () => {
-      const calleds = [false, false];
+    it('should call an authorizer function, fail', async () => {
+      await test({
+        authorize: Authorizer(THROW(true)),
+        rejectedWith: 'undefined',
+      });
 
-      const authorize = Authorizer([
-        (data) => {
-          calleds[0] = true;
-          throw new AuthorizationError();
-        },
-        (data) => calleds[1] = true,
-      ]);
+      await test({
+        authorize: Authorizer(THROW(true, 'some message')),
+        rejectedWith: 'some message',
+      });
 
-      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith(AuthorizationError);
-      expect(calleds).to.deep.eql([true, false]);
-    });
+      await test({
+        authorize: Authorizer(THROW(true, 'some message'), 'other message'),
+        rejectedWith: 'some message',
+      });
 
-    it('should process an authorizer array, first fail with a message', async () => {
-      const calleds = [false, false];
+      await test({
+        authorize: Authorizer(FALSE(true)),
+        rejectedWith: 'undefined',
+      });
 
-      const authorize = Authorizer([
-        (data) => {
-          calleds[0] = true;
-          return false;
-        },
-        (data) => calleds[1] = true,
-      ], 'some message');
-
-      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith('some message');
-      expect(calleds).to.deep.eql([true, false]);
-    });
-
-    it('should process an authorizer array, second fail', async () => {
-      const calleds = [false, false];
-
-      const authorize = Authorizer([
-        (data) => calleds[0] = true,
-        (data) => {
-          calleds[1] = true;
-          throw new AuthorizationError();
-        },
-      ]);
-
-      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith(AuthorizationError);
-      expect(calleds).to.deep.eql([true, true]);
-    });
-
-    it('should process an authorizer array, second fail with a message', async () => {
-      const calleds = [false, false];
-      
-      const authorize = Authorizer([
-        (data) => calleds[0] = true,
-        (data) => {
-          calleds[1] = true;
-          return false;
-        },
-      ], 'some message');
-
-      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith('some message');
-      expect(calleds).to.deep.eql([true, true]);
+      await test({
+        authorize: Authorizer(FALSE(true), 'other message'),
+        rejectedWith: 'other message',
+      });
     });
 
   });
 
   describe('logical not', () => {
 
-    it('should process a logical not, fail', async () => {
-      let called = false;
-
-      const authorize = not((data) => {
-        called = true;
-        expect(data).to.have.property('pi', 3.1);
-      });
-
-      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith(AuthorizationError);
-      expect(called).to.be.true;
-    });
-
-    it('should process a logical not, fail with a message', async () => {
-      let called = false;
-
-      const authorize = not((data) => {
-        called = true;
-        expect(data).to.have.property('pi', 3.1);
-      }, 'some message');
-
-      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith('some message');
-      expect(called).to.be.true;
-    });
-
     it('should process a logical not, ok', async () => {
-      let called = false;
-
-      const authorize = not((data) => {
-        called = true;
-        expect(data).to.have.property('pi', 3.1);
-        throw new AuthorizationError();
+      await test({
+        authorize: not(THROW(true)),
       });
 
-      await expect(authorize({ pi: 3.1 })).to.be.fulfilled;
-      expect(called).to.be.true;
+      await test({
+        authorize: not(THROW(true, 'message')),
+      });
+
+      await test({
+        authorize: not(THROW(true), 'other message'),
+      });
+
+      await test({
+        authorize: not(THROW(true, 'message'), 'other message'),
+      });
+
+      await test({
+        authorize: not(FALSE(true)),
+      });
+
+      await test({
+        authorize: not(FALSE(true), 'other message'),
+      });
+    });
+
+    it('should process a logical not, fail', async () => {
+      await test({
+        authorize: not(PASS(true)),
+        rejectedWith: 'undefined',
+      });
+
+      await test({
+        authorize: not(PASS(true), 'message'),
+        rejectedWith: 'message',
+      });
     });
 
   });
@@ -168,111 +129,143 @@ describe('Authorizer', () => {
   describe('logical and', () => {
 
     it('should process a logical and, ok', async () => {
-      const calleds = [false, false];
-
-      const authorize = and([
-        (data) => calleds[0] = true,
-        (data) => calleds[1] = true,
-      ]);
-
-      await expect(authorize({ pi: 3.1 })).to.be.fulfilled;
-      expect(calleds).to.deep.eql([true, true]);
+      await test({
+        authorize: and([PASS(true), PASS(true)]),
+      });
     });
 
     it('should process a logical and, first fail', async () => {
-      const calleds = [false, false];
- 
-      const authorize = and([
-        (data) => {
-          calleds[0] = true;
-          throw new AuthorizationError();
-        },
-        (data) => calleds[1] = true,
-      ]);
+      await test({
+        authorize: and([THROW(true), PASS(false)]),
+        rejectedWith: 'undefined',
+      });
 
-      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith(AuthorizationError);
-      expect(calleds).to.deep.eql([true, false]);
-    });
+      await test({
+        authorize: and([THROW(true, 'first message'), PASS(false)]),
+        rejectedWith: 'first message',
+      });
 
-    it('should process a logical and, first fail with a message', async () => {
-      const calleds = [false, false];
- 
-      const authorize = and([
-        (data) => {
-          calleds[0] = true;
-          return false;
-        },
-        (data) => calleds[1] = true,
-      ], 'some message');
+      await test({
+        authorize: and([THROW(true, 'first message'), PASS(false)], 'other message'),
+        rejectedWith: 'other message',
+      });
 
-      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith('some message');
-      expect(calleds).to.deep.eql([true, false]);
+      await test({
+        authorize: and([FALSE(true), PASS(false)]),
+        rejectedWith: 'undefined',
+      });
+
+      await test({
+        authorize: and([FALSE(true), PASS(false)], 'first message'),
+        rejectedWith: 'first message',
+      });
     });
 
     it('should process a logical and, second fail', async () => {
-      const calleds = [false, false];
+      await test({
+        authorize: and([PASS(true), THROW(true)]),
+        rejectedWith: 'undefined',
+      });
 
-      const authorize = and([
-        (data) => calleds[0] = true,
-        (data) => {
-          calleds[1] = true;
-          throw new AuthorizationError();
-        },
-      ]);
+      await test({
+        authorize: and([PASS(true), THROW(true, 'second message')]),
+        rejectedWith: 'second message',
+      });
 
-      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith(AuthorizationError);
-      expect(calleds).to.deep.eql([true, true]);
-    });
+      await test({
+        authorize: and([PASS(true), THROW(true, 'second message')], 'other message'),
+        rejectedWith: 'other message',
+      });
 
-    it('should process a logical and, second fail with a message', async () => {
-      const calleds = [false, false];
+      await test({
+        authorize: and([PASS(true), FALSE(true)]),
+        rejectedWith: 'undefined',
+      });
 
-      const authorize = and([
-        (data) => calleds[0] = true,
-        (data) => {
-          calleds[1] = true;
-          return false;
-        },
-      ], 'some message');
-
-      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith('some message');
-      expect(calleds).to.deep.eql([true, true]);
+      await test({
+        authorize: and([PASS(true), FALSE(true)], 'other message'),
+        rejectedWith: 'other message',
+      });
     });
 
     it('should process a logical and, both fail', async () => {
-      const calleds = [false, false];
+      await test({
+        authorize: and([THROW(true), THROW(false)]),
+        rejectedWith: 'undefined',
+      });
 
-      const authorize = and([
-        (data) => {
-          calleds[0] = true;
-          throw new AuthorizationError();
-        },
-        (data) => {
-          calleds[1] = true;
-          throw new AuthorizationError();
-        },
-      ]);
+      await test({
+        authorize: and([THROW(true), THROW(false, 'second message')]),
+        rejectedWith: 'undefined',
+      });
 
-      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith(AuthorizationError);
-      expect(calleds).to.deep.eql([true, false]);
-    });
+      await test({
+        authorize: and([THROW(true), THROW(false, 'second message')], 'other message'),
+        rejectedWith: 'other message',
+      });
 
-    it('should process a logical and, both fail with a message', async () => {
-      const calleds = [false, false];
+      await test({
+        authorize: and([THROW(true), FALSE(false)]),
+        rejectedWith: 'undefined',
+      });
 
-      const authorize = and([
-        (data) => {
-          calleds[0] = true;
-          return false;
-        },
-        (data) => {
-          calleds[1] = true;
-          return false;
-        },
-      ], 'some message');
+      await test({
+        authorize: and([THROW(true), FALSE(false)], 'other message'),
+        rejectedWith: 'other message',
+      });
 
-      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith('some message');
-      expect(calleds).to.deep.eql([true, false]);
+
+      await test({
+        authorize: and([THROW(true, 'first message'), THROW(false)]),
+        rejectedWith: 'first message',
+      });
+
+      await test({
+        authorize: and([THROW(true, 'first message'), THROW(false, 'second message')]),
+        rejectedWith: 'first message',
+      });
+
+      await test({
+        authorize: and([THROW(true, 'first message'), THROW(false, 'second message')], 'other message'),
+        rejectedWith: 'other message',
+      });
+
+      await test({
+        authorize: and([THROW(true, 'first message'), FALSE(false)]),
+        rejectedWith: 'first message',
+      });
+
+      await test({
+        authorize: and([THROW(true, 'first message'), FALSE(false)], 'other message'),
+        rejectedWith: 'other message',
+      });
+
+
+      await test({
+        authorize: and([FALSE(true), THROW(false)]),
+        rejectedWith: 'undefined',
+      });
+
+      await test({
+        authorize: and([FALSE(true), THROW(false, 'second message')]),
+        rejectedWith: 'undefined',
+      });
+
+      await test({
+        authorize: and([FALSE(true), THROW(false, 'second message')], 'other message'),
+        rejectedWith: 'other message',
+      });
+
+      await test({
+        authorize: and([FALSE(true), FALSE(false)]),
+        rejectedWith: 'undefined',
+      });
+
+      await test({
+        authorize: and([FALSE(true), FALSE(false)], 'other message'),
+        rejectedWith: 'other message',
+      });
+
     });
 
   });
@@ -280,111 +273,133 @@ describe('Authorizer', () => {
   describe('logical or', () => {
 
     it('should process a logical or, ok', async () => {
-      const calleds = [false, false];
-
-      const authorize = or([
-        (data) => calleds[0] = true,
-        (data) => calleds[1] = true,
-      ]);
-
-      await expect(authorize({ pi: 3.1 })).to.be.fulfilled;
-      expect(calleds).to.deep.eql([true, false]);
+      await test({
+        authorize: or([PASS(true), PASS(false)]),
+      });
     });
 
     it('should process a logical or, first fail', async () => {
-      const calleds = [false, false];
- 
-      const authorize = or([
-        (data) => {
-          calleds[0] = true;
-          throw new AuthorizationError();
-        },
-        (data) => calleds[1] = true,
-      ]);
+      await test({
+        authorize: or([THROW(true), PASS(true)]),
+      });
 
-      await expect(authorize({ pi: 3.1 })).to.be.fulfilled;
-      expect(calleds).to.deep.eql([true, true]);
-    });
+      await test({
+        authorize: or([THROW(true, 'some message'), PASS(true)]),
+      });
 
-    it('should process a logical or, first fail with a message', async () => {
-      const calleds = [false, false];
- 
-      const authorize = or([
-        (data) => {
-          calleds[0] = true;
-          return false;
-        },
-        (data) => calleds[1] = true,
-      ], 'some message');
+      await test({
+        authorize: or([THROW(true, 'some message'), PASS(true)], 'other message'),
+      });
 
-      await expect(authorize({ pi: 3.1 })).to.be.fulfilled;
-      expect(calleds).to.deep.eql([true, true]);
+      await test({
+        authorize: or([FALSE(true), PASS(true)]),
+      });
+
+      await test({
+        authorize: or([FALSE(true), PASS(true)], 'some message'),
+      });
     });
 
     it('should process a logical or, second fail', async () => {
-      const calleds = [false, false];
+      await test({
+        authorize: or([PASS(true), THROW(false)]),
+      });
 
-      const authorize = or([
-        (data) => calleds[0] = true,
-        (data) => {
-          calleds[1] = true;
-          throw new AuthorizationError();
-        },
-      ]);
+      await test({
+        authorize: or([PASS(true), THROW(false, 'second message')]),
+      });
 
-      await expect(authorize({ pi: 3.1 })).to.be.fulfilled;
-      expect(calleds).to.deep.eql([true, false]);
-    });
+      await test({
+        authorize: or([PASS(true), THROW(false, 'second message')], 'other message'),
+      });
 
-    it('should process a logical or, second fail with a message', async () => {
-      const calleds = [false, false];
+      await test({
+        authorize: or([PASS(true), FALSE(false)]),
+      });
 
-      const authorize = or([
-        (data) => calleds[0] = true,
-        (data) => {
-          calleds[1] = true;
-          return false;
-        },
-      ], 'some message');
-
-      await expect(authorize({ pi: 3.1 })).to.be.fulfilled;
-      expect(calleds).to.deep.eql([true, false]);
+      await test({
+        authorize: or([PASS(true), FALSE(false)], 'other message'),
+      });
     });
 
     it('should process a logical or, both fail', async () => {
-      const calleds = [false, false];
+      await test({
+        authorize: or([THROW(true), THROW(true)]),
+        rejectedWith: 'undefined',
+      });
 
-      const authorize = or([
-        (data) => {
-          calleds[0] = true;
-          throw new AuthorizationError();
-        },
-        (data) => {
-          calleds[1] = true;
-          throw new AuthorizationError();
-        },
-      ]);
+      await test({
+        authorize: or([THROW(true), THROW(true, 'second message')]),
+        rejectedWith: 'second message',
+      });
 
-      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith(AuthorizationError);
-      expect(calleds).to.deep.eql([true, true]);
-    });
+      await test({
+        authorize: or([THROW(true), THROW(true, 'second message')], 'other message'),
+        rejectedWith: 'other message',
+      });
 
-    it('should process a logical or, both fail with a message', async () => {
-      const calleds = [false, false];
+      await test({
+        authorize: or([THROW(true), FALSE(true)]),
+        rejectedWith: 'undefined',
+      });
 
-      const authorize = or([
-        (data) => {
-          calleds[0] = true;
-          return false;
-        },
-        (data) => {
-          calleds[1] = true;
-          return false;
-        },
-      ], 'some message');
+      await test({
+        authorize: or([THROW(true), FALSE(true)], 'second message'),
+        rejectedWith: 'second message',
+      });
 
-      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith('some message');
-      expect(calleds).to.deep.eql([true, true]);
+
+      await test({
+        authorize: or([THROW(true, 'first message'), THROW(true)]),
+        rejectedWith: 'undefined',
+      });
+
+      await test({
+        authorize: or([THROW(true, 'first message'), THROW(true, 'second message')]),
+        rejectedWith: 'second message',
+      });
+
+      await test({
+        authorize: or([THROW(true, 'first message'), THROW(true, 'second message')], 'other message'),
+        rejectedWith: 'other message',
+      });
+
+      await test({
+        authorize: or([THROW(true, 'first message'), FALSE(true)]),
+        rejectedWith: 'undefined',
+      });
+
+      await test({
+        authorize: or([THROW(true, 'first message'), FALSE(true)], 'second message'),
+        rejectedWith: 'second message',
+      });
+
+
+      await test({
+        authorize: or([FALSE(true), THROW(true)]),
+        rejectedWith: 'undefined',
+      });
+
+      await test({
+        authorize: or([FALSE(true), THROW(true, 'second message')]),
+        rejectedWith: 'second message',
+      });
+
+      await test({
+        authorize: or([FALSE(true), THROW(true, 'second message')], 'other message'),
+        rejectedWith: 'other message',
+      });
+
+      await test({
+        authorize: or([FALSE(true), FALSE(true)]),
+        rejectedWith: 'undefined',
+      });
+
+      await test({
+        authorize: or([FALSE(true), FALSE(true)], 'second message'),
+        rejectedWith: 'second message',
+      });
+
     });
 
   });
@@ -392,55 +407,17 @@ describe('Authorizer', () => {
   describe('mixed logical operators', () => {
   
     it('should process mixed logical operators 1', async () => {
-      const calleds = [false, false, false, false];
-      const authorize = Authorizer(and([
-        (data) => calleds[0] = true,
-        not((data) => { calleds[1] = true; return false; }),
-        or([
-          (data) => calleds[2] = true,
-          (data) => calleds[3] = true,
-        ]),
-      ]));
-
-      await expect(authorize({ pi: 3.1 })).to.be.fulfilled;
-      expect(calleds).to.deep.eql([true, true, true, false]);
-    });
-
-    it('should process mixed logical operators 2', async () => {
-      let called = false;
-
-      const authorize = or([
-        and([
-          (data) => { called = true; return false; },
-        ], 'other message'),
-      ], 'some message');
-
-      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith('some message');
-      expect(called).to.be.true;
-    });
-
-    it('should process mixed logical operators 3', async () => {
-      const calleds = [false, false, false, false, false, false, false];
-
-      const authorize = or([
-        (data) => {
-          calleds[0] = true;
-          throw new AuthorizationError();
-        },
-        and([
-          (data) => calleds[1] = true,
-          not((data) => { calleds[2] = true; throw new AuthorizationError(); }),
-          or([
-            (data) => { calleds[3] = true; return false; },
-            (data) => calleds[4] = true,
-            (data) => calleds[5] = true,
+      await test({
+        authorize: and([
+          or([FALSE(true), THROW(true), PASS(true)]),
+          not(and([PASS(true), PASS(true), THROW(true), FALSE(false)])),
+          or([PASS(true), PASS(false), THROW(false), FALSE(false)]),
+          and([
+            PASS(true),
+            or([THROW(true), not(PASS(true)), not(FALSE(true)), not(PASS(false))]),
           ]),
-          (data) => { calleds[6] = true; return false; },
-        ], 'other message'),
-      ], 'some message');
-
-      await expect(authorize({ pi: 3.1 })).to.be.rejectedWith('some message');
-      expect(calleds).to.deep.eql([true, true, true, true, true, false, true]);
+        ]),
+      });
     });
 
   });
