@@ -10,6 +10,7 @@ response formatting in express apps.
 
 - [authorization](./docs/authorization.md)
 - [validation](./docs/validation.md)
+- [formatting](./docs/formatting.md)
 - [API reference](./docs/api.md)
 
 ## Contributing

@@ -63,4 +63,107 @@ describe('Formatter', () => {
     });
   });
 
+  describe('readme example', () => {
+
+    const userFormatter = Formatter({
+      fullName: user => {
+        return user.firstName + ' ' + user.lastName.toUpperCase();
+      },
+      age: user => {
+        if (user.age < 18)
+          return;
+
+        return user.age;
+      },
+      email: user => user.email,
+    });
+
+    it('object formatter', async () => {
+      const user = await userFormatter({
+        firstName: 'Mano',
+        lastName: 'Cox',
+        age: 16,
+        email: 'mano@cox.tld',
+      });
+
+      expect(user).to.deep.eql({ fullName: 'Mano COX', email: 'mano@cox.tld' });
+    });
+
+    it('object formatter, multiple', async () => {
+      const users = await userFormatter.many([
+        { firstName: 'Mano', lastName: 'Cox', age: 16, email: null },
+        { firstName: 'nain', lastName: 'djardin', age: 24, email: null },
+      ]);
+
+      expect(users).to.deep.eql([
+        { fullName: 'Mano COX', email: null },
+        { fullName: 'nain DJARDIN', age: 24, email: null },
+      ]);
+    });
+
+    it('nesting formatters', async () => {
+      const itemFormatter = Formatter({
+        name: item => item.name,
+        shape: item => item.shape === 1 ? 'square' : 'not square',
+      });
+
+      const userFormatter = Formatter({
+        firstName: user => user.firstName,
+        item: user => itemFormatter(user.item),
+        friends: user => {
+          if (!user.friends)
+            return [];
+
+          return userFormatter.many(user.friends);
+        },
+      });
+
+      const user = await userFormatter({
+        firstName: 'jondo',
+        item: {
+          name: 'sword',
+          shape: 8,
+        },
+        friends: [
+          {
+            firstName: 'janda',
+            item: {
+              name: 'earth',
+              shape: 1,
+            },
+            friends: null,
+          },
+        ],
+      });
+
+      expect(user).to.deep.eql({
+        firstName: 'jondo',
+        item: { name: 'sword', shape: 'not square' },
+        friends: [
+          {
+            firstName: 'janda',
+            item: { name: 'earth', shape: 'square' },
+            friends: [],
+          },
+        ],
+      });
+    });
+
+    it('parameterized formatters', async () => {
+      const userFormatter = Formatter({
+        email: (user, opts) => {
+          if (opts.hideEmail)
+            return '*****';
+
+          return user.email;
+        },
+      });
+
+      const user = await userFormatter({ email: 'mano@cox.tld' }, { hideEmail: true });
+
+      expect(user).to.deep.eql({ email: '*****' });
+    });
+
+  });
+
 });
