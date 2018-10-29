@@ -61,7 +61,7 @@ describe('Authorizer', () => {
     it('should call an authorizer function, fail', async () => {
       await test({
         authorize: Authorizer(THROW(true)),
-        rejectedWith: 'undefined',
+        rejectedWith: /^unauthorized$/,
       });
 
       await test({
@@ -76,7 +76,7 @@ describe('Authorizer', () => {
 
       await test({
         authorize: Authorizer(FALSE(true)),
-        rejectedWith: 'undefined',
+        rejectedWith: /^unauthorized$/,
       });
 
       await test({
@@ -118,7 +118,7 @@ describe('Authorizer', () => {
     it('should process a logical not, fail', async () => {
       await test({
         authorize: not(PASS(true)),
-        rejectedWith: 'undefined',
+        rejectedWith: /^unauthorized$/,
       });
 
       await test({
@@ -140,7 +140,7 @@ describe('Authorizer', () => {
     it('should process a logical and, first fail', async () => {
       await test({
         authorize: and([THROW(true), PASS(false)]),
-        rejectedWith: 'undefined',
+        rejectedWith: /^unauthorized$/,
       });
 
       await test({
@@ -155,7 +155,7 @@ describe('Authorizer', () => {
 
       await test({
         authorize: and([FALSE(true), PASS(false)]),
-        rejectedWith: 'undefined',
+        rejectedWith: /^unauthorized$/,
       });
 
       await test({
@@ -167,7 +167,7 @@ describe('Authorizer', () => {
     it('should process a logical and, second fail', async () => {
       await test({
         authorize: and([PASS(true), THROW(true)]),
-        rejectedWith: 'undefined',
+        rejectedWith: /^unauthorized$/,
       });
 
       await test({
@@ -182,7 +182,7 @@ describe('Authorizer', () => {
 
       await test({
         authorize: and([PASS(true), FALSE(true)]),
-        rejectedWith: 'undefined',
+        rejectedWith: /^unauthorized$/,
       });
 
       await test({
@@ -194,12 +194,12 @@ describe('Authorizer', () => {
     it('should process a logical and, both fail', async () => {
       await test({
         authorize: and([THROW(true), THROW(false)]),
-        rejectedWith: 'undefined',
+        rejectedWith: /^unauthorized$/,
       });
 
       await test({
         authorize: and([THROW(true), THROW(false, 'second message')]),
-        rejectedWith: 'undefined',
+        rejectedWith: /^unauthorized$/,
       });
 
       await test({
@@ -209,7 +209,7 @@ describe('Authorizer', () => {
 
       await test({
         authorize: and([THROW(true), FALSE(false)]),
-        rejectedWith: 'undefined',
+        rejectedWith: /^unauthorized$/,
       });
 
       await test({
@@ -246,12 +246,12 @@ describe('Authorizer', () => {
 
       await test({
         authorize: and([FALSE(true), THROW(false)]),
-        rejectedWith: 'undefined',
+        rejectedWith: /^unauthorized$/,
       });
 
       await test({
         authorize: and([FALSE(true), THROW(false, 'second message')]),
-        rejectedWith: 'undefined',
+        rejectedWith: /^unauthorized$/,
       });
 
       await test({
@@ -261,7 +261,7 @@ describe('Authorizer', () => {
 
       await test({
         authorize: and([FALSE(true), FALSE(false)]),
-        rejectedWith: 'undefined',
+        rejectedWith: /^unauthorized$/,
       });
 
       await test({
@@ -328,7 +328,7 @@ describe('Authorizer', () => {
     it('should process a logical or, both fail', async () => {
       await test({
         authorize: or([THROW(true), THROW(true)]),
-        rejectedWith: 'undefined',
+        rejectedWith: /^unauthorized$/,
       });
 
       await test({
@@ -343,7 +343,7 @@ describe('Authorizer', () => {
 
       await test({
         authorize: or([THROW(true), FALSE(true)]),
-        rejectedWith: 'undefined',
+        rejectedWith: /^unauthorized$/,
       });
 
       await test({
@@ -354,7 +354,7 @@ describe('Authorizer', () => {
 
       await test({
         authorize: or([THROW(true, 'first message'), THROW(true)]),
-        rejectedWith: 'undefined',
+        rejectedWith: /^unauthorized$/,
       });
 
       await test({
@@ -369,7 +369,7 @@ describe('Authorizer', () => {
 
       await test({
         authorize: or([THROW(true, 'first message'), FALSE(true)]),
-        rejectedWith: 'undefined',
+        rejectedWith: /^unauthorized$/,
       });
 
       await test({
@@ -380,7 +380,7 @@ describe('Authorizer', () => {
 
       await test({
         authorize: or([FALSE(true), THROW(true)]),
-        rejectedWith: 'undefined',
+        rejectedWith: /^unauthorized$/,
       });
 
       await test({
@@ -395,7 +395,7 @@ describe('Authorizer', () => {
 
       await test({
         authorize: or([FALSE(true), FALSE(true)]),
-        rejectedWith: 'undefined',
+        rejectedWith: /^unauthorized$/,
       });
 
       await test({

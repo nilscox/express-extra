@@ -31,7 +31,7 @@ class NotFoundError extends ExpressExtraError {
 class AuthorizationError extends ExpressExtraError {
 
   constructor(message) {
-    super(401, 'unauthorized: ' + message);
+    super(401, 'unauthorized' + (message ? ': ' + message : ''));
   }
 
 }
