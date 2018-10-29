@@ -6,10 +6,10 @@ const or = (arr, message) => Authorizer({ op: 'or', authorizer: arr }, message);
 
 const Authorizer = module.exports = (authorizer, message) => {
 
-  const authorize = async data => {
+  const authorize = async (data, opts = {}) => {
 
     const authorize_function = async (data, f) => {
-      if (await f(data) === false)
+      if (await f(data, opts) === false)
         throw new AuthorizationError(message);
     };
 
@@ -17,7 +17,7 @@ const Authorizer = module.exports = (authorizer, message) => {
       let result = undefined;
 
       try {
-        result = await Authorizer(authorizer, message)(data);
+        result = await Authorizer(authorizer, message)(data, opts);
       } catch (e) {
         if (!(e instanceof AuthorizationError))
           throw e;
@@ -32,7 +32,7 @@ const Authorizer = module.exports = (authorizer, message) => {
     const authorize_and = async (data, arr) => {
       for (let i = 0; i < arr.length; ++i) {
         try {
-          if ((await Authorizer(arr[i], message)(data)) === false)
+          if ((await Authorizer(arr[i], message)(data, opts)) === false)
             throw AuthorizationError(message);
         } catch (e) {
           if (!(e instanceof AuthorizationError))
@@ -51,7 +51,7 @@ const Authorizer = module.exports = (authorizer, message) => {
 
       for (let i = 0; i < arr.length; ++i) {
         try {
-          return await Authorizer(arr[i], message)(data);
+          return await Authorizer(arr[i], message)(data, opts);
         } catch (e) {
           if (!(e instanceof AuthorizationError))
             throw e;

@@ -15,25 +15,28 @@ describe('Authorizer', () => {
     return spy;
   };
 
-  const PASS = (call) => addSpy(sinon.spy(data => {
+  const PASS = (call) => addSpy(sinon.spy((data, opts) => {
     expect(data).to.deep.eql({ pi: 3.14 });
+    expect(opts).to.deep.eql({ opt: true });
   }), call);
 
-  const FALSE = (call) => addSpy(sinon.spy(data => {
+  const FALSE = (call) => addSpy(sinon.spy((data, opts) => {
     expect(data).to.deep.eql({ pi: 3.14 });
+    expect(opts).to.deep.eql({ opt: true });
     return false;
   }), call);
 
-  const THROW = (call, message) => addSpy(sinon.spy(data => {
-    expect(data).to.deep.eql({ pi: 3.14 });    
+  const THROW = (call, message) => addSpy(sinon.spy((data, opts) => {
+    expect(data).to.deep.eql({ pi: 3.14 });
+    expect(opts).to.deep.eql({ opt: true });
     throw new AuthorizationError(message);
   }), call);
 
-  const test = async ({ authorize, payload = { pi: 3.14 }, rejectedWith }) => {
+  const test = async ({ authorize, rejectedWith }) => {
     if (rejectedWith)
-      await expect(authorize(payload)).to.be.rejectedWith(rejectedWith);
+      await expect(authorize({ pi: 3.14 }, { opt: true })).to.be.rejectedWith(rejectedWith);
     else
-      await expect(authorize(payload)).to.be.fulfilled;
+      await expect(authorize({ pi: 3.14 }, { opt: true })).to.be.fulfilled;
   };
 
   afterEach(() => {
@@ -474,6 +477,19 @@ describe('Authorizer', () => {
 
       await expect(adminAuthorizer2({ isAdmin: true })).to.be.fulfilled;
       await expect(adminAuthorizer2({ isAdmin: false })).to.be.rejectedWith(AuthorizationError);
+    });
+
+    it('authorizer function with options', async () => {
+      const adminAuthorizer = Authorizer((data, opts) => {
+        if (opts.bypassAdmin)
+          return;
+
+        if (data.isAdmin !== true)
+          throw new AuthorizationError('you must be an admin');
+      });
+
+      await expect(adminAuthorizer({ isAdmin: false })).to.be.rejectedWith(AuthorizationError);
+      await expect(adminAuthorizer({ isAdmin: false }, { bypassAdmin: true })).to.be.fulfilled;
     });
 
     it('logical operators', async () => {

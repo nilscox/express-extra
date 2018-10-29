@@ -46,6 +46,25 @@ optional message. The same authorizer can be written as:
 const adminAuthorizer = Authorizer(data => data.isAdmin === true, 'you must be an admin');
 ```
 
+### Parameterized authorization
+
+When authorization differs according to the context, you can provide an
+additional option object to the authorizer, that will be forwarded to all
+authorization functions.
+
+```js
+const adminAuthorizer = Authorizer((data, opts) => {
+  if (opts.bypassAdmin)
+    return;
+
+  if (data.isAdmin !== true)
+    throw new AuthorizationError('you must be an admin');
+});
+
+adminAuthorizer({ isAdmin: false }); // fails
+adminAuthorizer({ isAdmin: false }, { bypassAdmin: true }); // ok!
+```
+
 ### Logical operators
 
 Authorizers can be combined with logical operators using the `extra.and` and
