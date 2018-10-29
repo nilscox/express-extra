@@ -8,6 +8,7 @@ response formatting in express apps.
 
 ## Documentation
 
+- [request handler](./docs/extra.md)
 - [authorization](./docs/authorization.md)
 - [validation](./docs/validation.md)
 - [formatting](./docs/formatting.md)
