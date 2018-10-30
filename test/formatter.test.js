@@ -1,5 +1,5 @@
 const expect = require('./expect');
-const { Formatter, errors } = require('../index');
+const { Formatter } = require('../index');
 
 describe('Formatter', () => {
 

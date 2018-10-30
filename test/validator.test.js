@@ -1,7 +1,5 @@
 const expect = require('./expect');
-const { Validator, ValueValidator, errors } = require('../index');
-
-const { ValidationError, ValidationErrors, InvalidValueTypeError, MissingValueError } = errors;
+const { Validator, ValueValidator, ValidationError, ValidationErrors, InvalidValueTypeError, MissingValueError } = require('../index');
 
 describe('Validator', () => {
 

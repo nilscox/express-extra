@@ -1,8 +1,10 @@
 global.Promise = require('bluebird');
 
-module.exports.extra = require('./src/extra');
-module.exports.Authorizer = require('./src/authorizer');
-module.exports.Validator = require('./src/validator');
-module.exports.ValueValidator = require('./src/value-validator');
-module.exports.Formatter = require('./src/formatter');
-module.exports.errors = require('./src/errors');
+module.exports = {
+  extra: require('./src/extra'),
+  Authorizer: require('./src/authorizer'),
+  Validator: require('./src/validator'),
+  ValueValidator: require('./src/value-validator'),
+  Formatter: require('./src/formatter'),
+  ...require('./src/errors'),
+};

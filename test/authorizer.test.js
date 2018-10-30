@@ -1,8 +1,7 @@
 const sinon = require('sinon');
 const expect = require('./expect');
-const { Authorizer, errors } = require('../index');
+const { Authorizer, AuthorizationError } = require('../index');
 
-const { AuthorizationError } = errors;
 const { and, or, not } = Authorizer;
 
 describe('Authorizer', () => {
