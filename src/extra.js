@@ -10,6 +10,13 @@ module.exports = (handle, opts = {}) => {
     }
   };
 
+  if (opts.before) {
+    if (opts.before instanceof Array)
+      opts.before.forEach(middlewares.push.bind(middlewares));
+    else
+      middlewares.push(opts.before);
+  }
+
   if (opts.authorize) {
     middlewares.push(trycatch(async (req, res, next) => {
       await opts.authorize(req, opts.authorizeOpts);
@@ -19,16 +26,6 @@ module.exports = (handle, opts = {}) => {
   if (opts.validate) {
     middlewares.push(trycatch(async (req, res, next) => {
       req.validated = await opts.validate(req, opts.validateOpts);
-    }));
-  }
-
-  if (opts.middlewares) {
-    opts.middlewares.forEach(m => middlewares.push((req, res, next) => {
-      try {
-        m(req, res, next);
-      } catch (e) {
-        next(e);
-      }
     }));
   }
 
@@ -45,6 +42,13 @@ module.exports = (handle, opts = {}) => {
     else
       res.json(result);
   }));
+
+  if (opts.after) {
+    if (opts.after instanceof Array)
+      opts.after.forEach(middlewares.push.bind(middlewares));
+    else
+      middlewares.push(opts.after);
+  }
 
   return middlewares;
 };
