@@ -1,12 +1,12 @@
 # Extra request handler
 
-The core of *express-extra* is the handler function, that unify the
+The core of *express-extra* is the `extra` function, that unify the
 authorization, validation and formatting systems. It is a function that you
 must call with the actual request handler, as you would with express, and
-an options object in which you can set authorizers, validators, and so on...
+an options object in which you can set authorizers, validators, and more...
 
 This function returns an array of express middlewares, that can be used as the
-request handlers for your express routes.
+request handlers for your express app or router.
 
 ```js
 const app = express();
@@ -14,7 +14,7 @@ const app = express();
 app.get('/some-endpoint', extra(async (req, res) => {
   const data = /* fetch some data from a database */;
 
-  /* handle the request as you like */
+  /* handle the request as you wish */
 
   return data;
 }, {
@@ -23,6 +23,72 @@ app.get('/some-endpoint', extra(async (req, res) => {
   format: Formatter(/* ... */),
 }));
 ```
+
+## Request handling
+
+The request handler is a *function* invoked when the request has been approved
+by the authorization system, and the request payload is checked by the
+validators. It can possibly be an `async` function, or return a `Promise`.
+
+The function is **not** invoked with a `next` callback as third argument, as
+you would expect with an express middleware. Instead it can throw an `Error` or
+return a rejecting promise if something goes wrong.
+
+Finally, it should return a value (or a promise resolving a value) that will be
+given to the formatter.
+
+If the resulting value is `undefined`, then the request will end with a
+status code `204` (no content), if it is a `string`, it will be sent with
+`res.text`, and anything else will result in a call to `res.json`.
+
+## Authorization, validation and formatting
+
+The options object in `extra`'s second parameter allows you set an authorizer,
+a validator and a formatter to the request handler. All options can be omited.
+If any function throws an `Error`, or return a rejecting `Promise`, then the
+error is caught and the underlying express middleware's `next` callback is
+invoked with the error.
+
+Options can be set on the three systems with the `authorizeOpts`,
+`validateOpts`, and `formatOpts`.
+
+```js
+app.get('/post/:id/edit', extra(/* handler */, {
+  authorize: or([
+    isAdmin,
+    and([isSignedIn, canEditPost]),
+  ]),
+  authorizeOpts: {
+    blackList: ['niko', 'okras'],
+  },
+  validate: req => postValidator(req.body, { partial: true }),
+  format: postFormatter,
+});
+```
+
+## Before / After hooks
+
+Express middlewares can be added before and after the whole request handling
+with the `opts.before` and `opts.after` options respectively. The after hook
+can be a good place if you need some custom error handling. It can be either a
+function (`(req, res, next) => any`) or an array of functions of the same
+shape.
+
+```js
+app.get('/some-endpoint', extra(/* handler */, {
+  before: (req, res, next) => {
+    // do something before the authorizer is called
+    next();
+  },
+  after: (err, req, res, next) => {
+    // handle the error
+    res.status(418).end();
+  },
+});
+```
+
+> Note: before and after hooks are real express middlewares, it cannot
+> be async functions or return a Promise.
 
 ## Full example
 

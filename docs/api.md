@@ -1,5 +1,35 @@
 # ExpressExtra API reference
 
+## Extra request handler
+
+```js
+extra(handler: Handler, opts?: ExtraOpts) => Array<ExpressMiddleware>
+
+ExpressMiddleware: (req, res, next) => any
+Handler: (req: Request, res: Response) => any | Promise<any>
+ExtraOpts: {
+  authorize?: Authorizer,
+  authorizeOpts?: any,
+  validate?: Validator,
+  validateOpts?: any,
+  format?: Formatter,
+  formatOpts?: any,
+  before: ExpressMiddleware || Array<ExpressMiddleware>,
+  after: ExpressMiddleware || Array<ExpressMiddleware>,
+}
+```
+
+Create an express-complient request handler, supporting authorization, data
+validation and response formatting. The handler can be [`async`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function)
+or return a [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise).
+
+- handler: the actual handler
+- opts: the handler's options (self descriptive)
+
+The value returned or resolved by the validator is stored in `req.validated`,
+and can be accessed by the handler. The value returned or resolved by the
+handler is forwarded to the formatter, if any.
+
 ## Authorization
 
 ### Authorizer type
@@ -136,4 +166,5 @@ A custom validator can return another validator, in this case it will be
 invoked with the original data and the `opts` object will be forwarded. This
 allows to build recursive validators.
 
-> Note: here, original data refers to the data passed in the function's first argument
+> Note: here, original data refers to the data passed in the function's first
+> argument.
