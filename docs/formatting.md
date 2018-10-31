@@ -18,6 +18,8 @@ fields of the output object to functions that will be invoked with the whole
 instance, and that must return the formatted value (or a promise resolving it).
 
 ```js
+const { Formatter } = require('express-extra');
+
 const userFormatter = Formatter({
   fullName: user => {
     return user.firstName + ' ' + user.lastName.toUpperCase();

@@ -54,7 +54,7 @@ otherwise is discarded.
 ### Authorize
 
 ```js
-Authorize(authorizer: Authorizer | Array<Authorizer>, message?: string) => Authorizer
+extra.Authorize(authorizer: Authorizer | Array<Authorizer>, message?: string) => Authorizer
 ```
 
 Create an authorizer function.
@@ -68,7 +68,7 @@ it will be treated as a logical and.
 ### Logical not
 
 ```js
-Authorize.not(authorizer: Authorizer, message?: string) => Authorizer
+extra.Authorize.not(authorizer: Authorizer, message?: string) => Authorizer
 ```
 
 - authorizer: the authorizer to negate
@@ -80,7 +80,7 @@ It will then throw an instance of `AuthorizationError`.
 ### Logical or
 
 ```js
-Authorize.or(authorizers: Array<Authorizer>) => Authorizer
+extra.Authorize.or(authorizers: Array<Authorizer>) => Authorizer
 ```
 
 - authorizers: the authorizers array
@@ -91,7 +91,7 @@ authorizers provided in its parameter succeeds.
 ### Logical and
 
 ```js
-Authorize.and(authorizers: Array<Authorizer>) => Authorizer
+extra.Authorize.and(authorizers: Array<Authorizer>) => Authorizer
 ```
 
 - authorizers: the authorizers array
@@ -118,7 +118,7 @@ informations that you will need about how to validate the data, if necessary.
 ### Validator
 
 ```js
-Validator(fields: {[string]: Validator}) => Validator
+extra.Validator(fields: {[string]: Validator}) => Validator
 ```
 
 Create an object validator.
@@ -141,7 +141,7 @@ validator.many<T: any>: (data: Array<T>, opts: {}) => Array<T> | Promise<Array<T
 ### ValueValidator
 
 ```js
-ValueValidator(params: {}) => Validator
+extra.ValueValidator(params: {}) => Validator
 ```
 
 Create a single value validator.
@@ -192,7 +192,7 @@ return the formatted value, or a promise resolving it.
 ### Formatter
 
 ```js
-Formatter(fields: {[string]: Formatter}) => Formatter
+extra.Formatter(fields: {[string]: Formatter}) => Formatter
 ```
 
 Create a formatter.

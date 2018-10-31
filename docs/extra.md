@@ -9,6 +9,8 @@ This function returns an array of express middlewares, that can be used as the
 request handlers for your express app or router.
 
 ```js
+const extra = require('express-extra');
+
 const app = express();
 
 app.get('/some-endpoint', extra(async (req, res) => {

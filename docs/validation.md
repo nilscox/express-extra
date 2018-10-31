@@ -91,6 +91,8 @@ single value validator, that will check the value against a set of conditions
 that the value should meet to be concidered as valid.
 
 ```js
+const { ValueValidator } = require('express-extra');
+
 const validateSpeed = ValueValidator({
   type: 'number',
   required: true,

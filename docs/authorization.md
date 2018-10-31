@@ -30,6 +30,8 @@ be thrown for you.
 > make sense to pass down the [request object](http://expressjs.com/en/4x/api.html#req).
 
 ```js
+const { Authorizer } = require('express-extra');
+
 const adminAuthorizer = Authorizer(data => {
   if (data.isAdmin !== true)
     throw new AuthorizationError('you must be an admin');
