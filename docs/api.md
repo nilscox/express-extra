@@ -27,8 +27,15 @@ or return a [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Re
 - opts: the handler's options (self descriptive)
 
 The value returned or resolved by the validator is stored in `req.validated`,
-and can be accessed by the handler. The value returned or resolved by the
-handler is forwarded to the formatter, if any.
+and can be accessed by the authorizer and the handler. The value returned or
+resolved by the handler is forwarded to the formatter, if any.
+
+If the final value (returned by the handler, and eventually formatted), can be
+of type:
+
+- `undefined`: the response status will is set to 204, and the request ends.
+- `string`: the request ends with [`res.send`](http://expressjs.com/en/4x/api.html#res.send).
+- anything else: the request ends with [`res.json`](http://expressjs.com/en/4x/api.html#res.json).
 
 ## Authorization
 
@@ -55,7 +62,8 @@ Create an authorizer function.
 - authorizer: the authorizer function or array
 - message (optional): the error message if an authorizer function fails by returning false
 
-If the authorizer is an array, it will be treated as a logical and.
+The created authorizer always returns a Promise. If the authorizer is an array,
+it will be treated as a logical and.
 
 ### Logical not
 
@@ -118,8 +126,8 @@ Create an object validator.
 - fields: an object mapping the keys of the expected object to validators
 
 The returned value is a Validator function that will check an object's fields
-against each fields validators, and return the validated value. The `opts`
-object will be forwarded to all fields validators.
+against each fields validators, and return a Promise resolving the validated
+value. The `opts` object will be forwarded to all fields validators.
 
 The returned validator has a `many` auxilliary function, which validates an
 array of object instead of a single one.
@@ -150,7 +158,8 @@ The `params` object can define several validation rules:
 The returned validator is a function that will check a value against all rules
 defined in the `params` object. In the validator's options, setting `partial`
 to `true` allows for partial validation (i.e. set required to `false` for all
-fields).
+fields). The value validator always returns a Promise resolving the validated
+value.
 
 `params.validate` is a custom validator that can perform other validation rules
 as your needs. It will be invoked with the data value to validate, and the
