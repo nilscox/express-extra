@@ -166,7 +166,49 @@ describe('extra', () => {
 
   describe('before / after hooks', () => {
 
-    // TODO, but I think it works
+    it('should invoke the before hook before all middlewares', async () => {
+      const spy = sinon.spy((req, res, next) => {
+        expect(req).to.have.property('req', true);
+        expect(res).to.have.property('res', true);
+        expect(next).to.be.a('function');
+
+        req.data = 42;
+
+        next();
+      });
+
+      const middlewares = extra((req) => {
+        expect(req).to.have.property('data', 42);
+      }, {
+        before: spy,
+        authorize: req => expect(req).to.have.property('data', 42),
+        validate: req => expect(req).to.have.property('data', 42),
+      });
+
+      await runMiddlewares(middlewares);
+
+      expect(middlewares).to.have.lengthOf(4);
+      expect(spy.called).to.be.true;
+    });
+
+    it('should invoke the after hook after all middlewares', async () => {
+      const spy = sinon.spy((req, res, next) => {
+        expect(req).to.have.property('req', true);
+        expect(res).to.have.property('res', true);
+        expect(next).to.be.a('function');
+
+        next();
+      });
+
+      const middlewares = extra(() => {}, {
+        after: spy,
+      });
+
+      await runMiddlewares(middlewares);
+
+      expect(middlewares).to.have.lengthOf(2);
+      expect(spy.called).to.be.true;
+    });
 
   });
 
