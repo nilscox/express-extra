@@ -14,7 +14,7 @@ response formatting in express apps.
 - [formatting](./docs/formatting.md)
 - [API reference](./docs/api.md)
 
-## Example
+## Overview
 
 The `extra` function allows to create an express milldeware with superpowers.
 Its first argument will be the actual request handler, a function that is
@@ -46,6 +46,6 @@ opening issues, discuss about some improvments or features, review the code,
 write some more tests...
 
 I think `express-extra` can be a great tool, and I'm trying my best to produce
-the best API as possible, a good documentation and a strong test suite. As I am
-a junior developer, I definitly know that thoses can be improved even more, and
+the best API as possible, a good documentation and a strong test suite. As a
+junior developer, I definitly know that thoses can be improved even more, and
 I'm really open to any suggestion. In fact, I need you to make *extra* awesome!
