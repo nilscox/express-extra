@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "test": "mocha",
-    "test:coverage": "nyc yarn test"
+    "test:coverage": "nyc mocha"
   },
   "peerDependencies": {
     "express": "4.x"
