@@ -17,15 +17,15 @@ module.exports = (handle, opts = {}) => {
       middlewares.push(opts.before);
   }
 
-  if (opts.authorize) {
-    middlewares.push(trycatch(async (req, res, next) => {
-      await opts.authorize(req, opts.authorizeOpts);
-    }));
-  }
-
   if (opts.validate) {
     middlewares.push(trycatch(async (req, res, next) => {
       req.validated = await opts.validate(req, opts.validateOpts);
+    }));
+  }
+
+  if (opts.authorize) {
+    middlewares.push(trycatch(async (req, res, next) => {
+      await opts.authorize(req, opts.authorizeOpts);
     }));
   }
 
