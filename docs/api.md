@@ -177,3 +177,33 @@ allows to build recursive validators.
 
 > Note: here, original data refers to the data passed in the function's first
 > argument.
+
+## Formatting
+
+### Formatter type
+
+```js
+Formatter: (value, opts) => any | Promise<any>
+```
+
+A formatter is a function that takes a piece of data and some options, and must
+return the formatted value, or a promise resolving it.
+
+### Formatter
+
+```js
+Formatter(fields: {[string]: Formatter}) => Formatter
+```
+
+Create a formatter.
+
+- fields: an object mapping the fields of the formatted object to formatter functions
+
+The returned value is a formatter function, that can be invoked with any value
+as first argument, and which will be forwarded to all fields formatter
+functions, as long with `opts`. The created formatter always return a Promise
+resolving the formatted value.
+
+The returned function has a `formatter.many` auxilliary function that expects
+an array of values instead of a single one, and returns a Promise resolving
+an array of formatted values.
