@@ -49,8 +49,14 @@ If any function throws an `Error`, or return a rejecting `Promise`, then the
 error is caught and the underlying express middleware's `next` callback is
 invoked with the error.
 
+The authorizer and the validator, if any, are called with the `req` object. The
+validated data returned by the validator is stored in `req.validated`, and can
+be accessed in the authorizer and the handler. The value returned or resolved
+by the handler is then provided to the formatter, if any, to build the final
+value that will be sent in the response.
+
 Options can be set on the three systems with the `authorizeOpts`,
-`validateOpts`, and `formatOpts`.
+`validateOpts`, and `formatOpts` options.
 
 ```js
 app.get('/post/:id/edit', extra(/* handler */, {
