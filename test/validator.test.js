@@ -56,6 +56,17 @@ describe('Validator', () => {
       expect(await itemValidator.many([{ a: 5 }, { a: 8 }])).to.deep.eql([{ a: 5 }, { a: 8 }]);
     });
 
+    it('should forward options to field validators', async () => {
+      const itemValidator = Validator({
+        a: (value, opts) => {
+          expect(opts).to.deep.eql({ foo: 'bar' });
+          return value;
+        },
+      });
+
+      expect(await itemValidator({ a: 42 }, { a: { foo: 'bar' } })).to.deep.eql({ a: 42 });
+    });
+
   });
 
   describe('with ValueValidator', () => {
