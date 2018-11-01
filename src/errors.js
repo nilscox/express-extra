@@ -102,6 +102,14 @@ class MissingValueError extends ValidationError {
 
 }
 
+class ReadOnlyValueError extends ValidationError {
+
+  constructor(field) {
+    super('this field is read only', field);
+  }
+
+}
+
 class InvalidValueTypeError extends ValidationError {
 
   constructor(type, field) {
@@ -119,5 +127,6 @@ module.exports = {
   ValidationErrors,
   ValidationError,
   MissingValueError,
+  ReadOnlyValueError,
   InvalidValueTypeError,
 };

@@ -1,16 +1,19 @@
-const { ValidationError, ValidationErrors, MissingValueError, InvalidValueTypeError } = require('./errors');
+const {
+  ValidationError,
+  ValidationErrors,
+  MissingValueError,
+  InvalidValueTypeError,
+  ReadOnlyValueError,
+} = require('./errors');
 
 const DEFAULT_FIELD = {
   type: undefined,
   required: false,
+  readOnly: false,
   allowNull: false,
   defaultValue: undefined,
   many: false,
   validate: () => {},
-};
-
-const DEFAULT_OPTS = {
-  partial: false,
 };
 
 const isPrimitiveType = t => {
@@ -24,49 +27,54 @@ const isPrimitiveType = t => {
   ].indexOf(t) >= 0;
 };
 
-const ValueValidator = module.exports = field => async (data, opts = DEFAULT_OPTS) => {
-  const { type, required, allowNull, defaultValue, many, validate } = { ...DEFAULT_FIELD, ...field };
-  const { partial } = { ...DEFAULT_OPTS, ...opts };
+const ValueValidator = module.exports = field => async (data, opts = {}) => {
+  const {
+    type,
+    required,
+    readOnly,
+    allowNull,
+    defaultValue,
+    many,
+    validate,
+  } = { ...DEFAULT_FIELD, ...field, ...opts };
+
+  if (readOnly) {
+    if (data === undefined)
+      return;
+    else
+      throw new ReadOnlyValueError();
+  }
 
   if (data === undefined)
     data = defaultValue;
 
-  const isset = data !== undefined;
-
-  if ((partial || !required) && !isset)
-    return;
-
-  if (required && !isset)
-    throw new MissingValueError();
+  if (data === undefined) {
+    if (!required)
+      return;
+    else
+      throw new MissingValueError();
+  }
 
   if (allowNull && data === null)
     return null;
 
-  const validateData = async data => {
-    const callValidate = async (data, validate) => {
-      try {
-        const validated = await validate(data, opts);
-  
-        // call validateData?
-        if (typeof validated === 'function')
-          return await callValidate(data, validated);
+  const callValidate = async (data, validate) => {
+    try {
+      const validated = await validate(data, opts);
 
-        if (validated !== undefined)
-          return validated;
+      if (typeof validated === 'function')
+        return await callValidate(data, validated);
 
-        return data;
-      } catch (e) {
-        if (type && !isPrimitiveType(type) && e instanceof InvalidValueTypeError)
-          e.type = type;
+      if (validated !== undefined)
+        return validated;
 
-        throw e;
-      }
-    };
+      return data;
+    } catch (e) {
+      if (type && !isPrimitiveType(type) && e instanceof InvalidValueTypeError)
+        e.type = type;
 
-    if (validate instanceof Array)
-      return await Promise.reduce(validate, callValidate, data);
-    else
-      return await callValidate(data, validate);
+      throw e;
+    }
   };
 
   if (many) {
@@ -81,7 +89,7 @@ const ValueValidator = module.exports = field => async (data, opts = DEFAULT_OPT
         if (isPrimitiveType(type) && typeof data[i] !== type)
           throw new InvalidValueTypeError(type);
 
-        validated[i] = await validateData(data[i]);
+        validated[i] = await callValidate(data[i], validate);
       } catch (e) {
         if (!(e instanceof ValidationError))
           throw e;
@@ -100,5 +108,5 @@ const ValueValidator = module.exports = field => async (data, opts = DEFAULT_OPT
   if (isPrimitiveType(type) && typeof data !== type)
     throw new InvalidValueTypeError(type);
 
-  return validateData(data);
+  return callValidate(data, validate);
 };

@@ -65,11 +65,20 @@ describe('ValueValidator', () => {
     await expect(validateDefault(undefined)).to.be.rejectedWith(/of type number/);
   });
 
+  it('should validate a readOnly field', async () => {
+    const validateDefault = ValueValidator({
+      readOnly: true,
+    });
+
+    await expect(validateDefault(42)).to.be.rejectedWith(/read only/);
+    expect(await validateDefault(undefined)).to.be.undefined;
+  });
+
   it('should validate a field through a validation function', async () => {
     const validateFunc = ValueValidator({
       type: 'number',
       validate: (value, opts) => {
-        expect(opts).to.deep.eql({ partial: false });
+        expect(opts).to.deep.eql({});
 
         if (value < 0)
           throw new ValidationError('this field must be positive');
@@ -89,43 +98,6 @@ describe('ValueValidator', () => {
     expect(await validateFunc(42)).to.eql(43);
   });
 
-  it('should validate a field through multiple validation functions', async () => {
-    const validateFunc = ValueValidator({
-      type: 'number',
-      validate: [
-        value => {
-          if (value < 0)
-            throw new ValidationError('this field must be positive');
-        },
-        value => {
-          if (value > 100)
-            throw new ValidationError('this field must be < 100');
-        },
-      ],
-    });
-
-    expect(await validateFunc(42)).to.eql(42);
-    await expect(validateFunc(-69)).to.be.rejectedWith(/must be positive/);
-    await expect(validateFunc(123)).to.be.rejectedWith(/must be < 100/);
-  });
-
-  it('should validate a field through multiple validation functions returning values', async () => {
-    const validateFunc = ValueValidator({
-      type: 'number',
-      validate: [
-        value => value + 1,
-        value => {
-          if (value > 100)
-            throw new ValidationError('this field must be < 100');
-        },
-        value => value * 2,
-      ],
-    });
-
-    expect(await validateFunc(4)).to.eql(10);
-    await expect(validateFunc(666)).to.be.rejectedWith(/must be < 100/);
-  });
-
   it('should validate a field through a validation function returning a validation function', async () => {
     const validateFunc = ValueValidator({
       type: 'number',
@@ -133,19 +105,6 @@ describe('ValueValidator', () => {
     });
 
     expect(await validateFunc(4)).to.eql(12);
-  });
-
-  it('should validate a field through multiple validation functions returning validation functions', async () => {
-    const validateFunc = ValueValidator({
-      type: 'number',
-      validate: [
-        a => b => a + b,
-        c => c + 1,
-        d => e => d * 2 + e,
-      ],
-    });
-
-    expect(await validateFunc(4)).to.eql(27);
   });
 
   it('should validate an array', async () => {
@@ -198,7 +157,7 @@ describe('ValueValidator', () => {
     await expect(validateArrayNumber([1, 'foo', 3])).to.be.rejectedWith(/\[1\] => .* of type number/);
   });
 
-  it('should forward opts to a validation function', async () => {
+  it('should forward the options to a validation function', async () => {
     const validateFunc = ValueValidator({
       validate: (value, opts) => {
         expect(opts.foo).to.eql(42);
@@ -208,12 +167,21 @@ describe('ValueValidator', () => {
     await validateFunc(null, { foo: 42 });
   });
 
-  it('should partially validate a required field', async () => {
+  it.skip('should partially validate a required field', async () => {
     const validateRequire = ValueValidator({
       required: true,
     });
 
     expect(await validateRequire(undefined, { partial: true })).to.eql(undefined);
+  });
+
+  it('should override field specs with the options', async () => {
+    const validateRequire = ValueValidator({
+      required: true,
+    });
+
+    expect(await validateRequire(undefined, { required: false })).to.eql(undefined);
+    await expect(validateRequire(null, { many: true })).to.be.rejectedWith(/of type Array/);
   });
 
 });

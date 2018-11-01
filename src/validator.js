@@ -15,7 +15,7 @@ const Validator = module.exports = (fields) => {
       const key = keys[i];
 
       try {
-        validated[key] = await fields[key](data[key], opts);
+        validated[key] = await fields[key](data[key], opts[key] || {});
       } catch (e) {
         if (!(e instanceof ValidationError))
           throw e;
@@ -35,7 +35,7 @@ const Validator = module.exports = (fields) => {
     return ValueValidator({
       many: true,
       validate: validateObject,
-    })(data, { ...opts, many: false });
+    })(data, opts);
   };
 
   return validateObject;
