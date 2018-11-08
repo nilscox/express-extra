@@ -29,19 +29,23 @@ module.exports = (handle, opts = {}) => {
     }));
   }
 
-  middlewares.push(trycatch(async (req, res, next) => {
-    let result = await handle(req, res);
+  middlewares.push(async (req, res, next) => {
+    try {
+      let result = await handle(req, res);
 
-    if (opts.format)
-      result = await opts.format(result, opts.formatOpts);
+      if (opts.format)
+        result = await opts.format(result, opts.formatOpts);
 
-    if (typeof result === 'undefined')
-      res.status(204).end();
-    else if (typeof result === 'string')
-      res.send(result);
-    else
-      res.json(result);
-  }));
+      if (typeof result === 'undefined')
+        res.status(204).end();
+      else if (typeof result === 'string')
+        res.send(result);
+      else
+        res.json(result);
+    } catch (e) {
+      next(e);
+    }
+  });
 
   if (opts.after) {
     if (opts.after instanceof Array)

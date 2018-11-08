@@ -9,15 +9,19 @@ const runMiddlewares = async middlewares => {
     mock: {},
   };
 
-  ['status', 'end', 'json', 'send'].forEach(m => {
-    res[m] = sinon.spy(arg => {
-      res.mock[m] = arg || true;
-      return res;
-    });
-  });
-
   for (let i = 0; i < middlewares.length; ++i) {
     await new Promise((resolve, reject) => {
+      ['status', 'end', 'json', 'send'].forEach(m => {
+        res[m] = sinon.spy(arg => {
+          res.mock[m] = arg || true;
+
+          if (m !== 'status')
+            setTimeout(resolve, 0);
+
+          return res;
+        });
+      });
+
       middlewares[i](req, res, e => {
         if (e) reject(e);
         else resolve();
