@@ -8,7 +8,10 @@ const Formatter = module.exports = fields => {
       const field = keys[i];
       const formatter = fields[field];
 
-      const formatted = await formatter(obj, opts);
+      if (opts[field] === false)
+        continue;
+
+      const formatted = await formatter(obj, opts[field]);
 
       if (typeof formatted !== 'undefined')
         data[field] = formatted;
