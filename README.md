@@ -3,8 +3,8 @@
 [![Build Status](https://travis-ci.org/nilscox/express-extra.svg?branch=master)](https://travis-ci.org/nilscox/express-extra)
 [![Coverage Status](https://coveralls.io/repos/github/nilscox/express-extra/badge.svg?branch=master)](https://coveralls.io/github/nilscox/express-extra?branch=master)
 
-This package provides helpers for handling data validation, authorizations, and
-response formatting in express apps.
+This package aims to provide *extra* functionnalities to an express app, such
+as authorizations, input validation, and response formatting.
 
 ## Documentation
 
@@ -12,6 +12,7 @@ response formatting in express apps.
 - [validation](./docs/validation.md)
 - [authorization](./docs/authorization.md)
 - [formatting](./docs/formatting.md)
+- [errors](./docs/errors.md)
 - [API reference](./docs/api.md)
 
 ## Overview
@@ -19,8 +20,8 @@ response formatting in express apps.
 The `extra` function allows to create an express milldeware with superpowers.
 Its first argument will be the actual request handler, a function that is
 invoked when the request has been approved by the authorizer and its payload
-validated by the validator. The value it returns (or resolves) will be
-transformed by a formatter, and then sent in the response payload.
+validated. The value it returns (or resolves) will eventually be transformed by
+a formatter, and then sent in the response payload.
 
 ```js
 const express = require('express');
@@ -46,6 +47,6 @@ opening issues, discuss about some improvments or features, review the code,
 write some more tests...
 
 I think `express-extra` can be a great tool, and I'm trying my best to produce
-the best API as possible, a good documentation and a strong test suite. As a
-junior developer, I definitly know that thoses can be improved even more, and
+a simple API, a good documentation and a strong test suite. As a junior
+developer, I definitly know that thoses can be improved even more, and
 I'm really open to any suggestion. In fact, I need you to make *extra* awesome!

@@ -53,14 +53,13 @@ and call [`res.status`](http://expressjs.com/en/4x/api.html#res.status) with
 ### Authorizer type
 
 ```js
-Authorizer: (data: any) => any | Promise<any>
+Authorizer: (data: any) => (false | any) | Promise<(false | any)>
 ```
 
 An Authorizer is a function that takes a piece of data, and must throw (or
-reject with) an instance of AuthorizationError (or one of its sub-class) if the
-data does not match the set of permissions. If the returned (or resolved) value
-is `false`, then an instance of AuthorizationError will be thrown. It is
-otherwise is discarded.
+reject with) an instance of AuthorizationError if the data does not respect
+some condition. If the returned (or resolved) value is `false`, then an
+instance of AuthorizationError will be thrown. It is otherwise is discarded.
 
 ### Authorize
 
@@ -85,8 +84,8 @@ extra.Authorize.not(authorizer: Authorizer, message?: string) => Authorizer
 - authorizer: the authorizer to negate
 - message (optional): the error message if the authorizer succeed
 
-Create an authorizer function that will succeed if the given authorizer fails.
-It will then throw an instance of `AuthorizationError`.
+Negate an authorizer. If the given authorizer does not throw, the created
+authorizer will throw an `AuthorizationError` itself.
 
 ### Logical or
 
@@ -107,7 +106,7 @@ extra.Authorize.and(authorizers: Array<Authorizer>) => Authorizer
 
 - authorizers: the authorizers array
 
-Create an authorizer function that will succeed if all the authorizers
+Create an authorizer function that will succeed only if all the authorizers
 provided in its parameter succeeds.
 
 ## Validation
@@ -119,72 +118,75 @@ Validator: (data: any, opts: {}) => any | Promise<any>
 ```
 
 A Validator is a function that takes a piece of data and some options, and
-must throw (or reject with) an instance of ValidationError (or one of its
-sub-class) if the validation fails. The returned value must be the validated
-data.
-
-The `opts` object allows to create parameterized validators. It should contain
-informations that you will need about how to validate the data, if necessary.
+must throw (or reject with) an instance of ValidationError if the validation
+fails. The returned or resolved value must be the validated data.
 
 ### Validator
 
 ```js
-extra.Validator(fields: {[string]: Validator}) => Validator
+extra.Validator(fields: { [string]: Validator }) => Validator
 ```
 
 Create an object validator.
 
 - fields: an object mapping the keys of the expected object to validators
 
-The returned value is a Validator function that will check an object's fields
+The returned value is a validator function that will check an object's fields
 against each fields validators, and return a Promise resolving the validated
-value. The `opts` object will be forwarded to all fields validators.
+value. The validator's `opts` parameter must map each field to a specific
+option object for that field. If a field has the value `false` for its options,
+it is excluded from the validation.
 
-The returned validator has a `many` auxilliary function, which validates an
+The created validator has a `many` auxilliary function, which validates an
 array of object instead of a single one.
 
 ```js
 const validator = Validator(...);
 
-validator.many<T: any>: (data: Array<T>, opts: {}) => Array<T> | Promise<Array<T>>
+validator.many: (data: Array, opts: {}) => Promise<Array>
 ```
 
 ### ValueValidator
 
 ```js
-extra.ValueValidator(params: {}) => Validator
+extra.ValueValidator(params: ValueValidatorParams) => Validator
+
+ValueValidatorParams: {
+  type: string,
+  required: boolean,
+  allowNull: boolean,
+  defaultValue: any,
+  many: boolean,
+  validate: Validator | Array<Validator>,
+}
 ```
 
 Create a single value validator.
 
-The `params` object can define several validation rules:
-
-- type (string): the value's type (if primitive)
-- required (boolean, default: false): throw a MissingValueError if the value is undefined
-- allowNull (boolean, default: false): accepts `null` as a valid value
-- defaultValue (any): set a default value if not provided
-- many (boolean, default: false): accepts an array as value
-- validate (Validator | Array<Validator>): custom validation rules
+- params.type: the value's type (if primitive)
+- params.required (default: false): throw a MissingValueError if the value is undefined
+- params.allowNull (default: false): accepts `null` as a valid value
+- params.defaultValue: set a default value if not provided
+- params.many (default: false): accepts an array as value
+- params.validate: custom validation rules
 
 The returned validator is a function that will check a value against all rules
-defined in the `params` object. In the validator's options, setting `partial`
-to `true` allows for partial validation (i.e. set required to `false` for all
-fields). The value validator always returns a Promise resolving the validated
-value.
+defined in the `params` object. The created validator always returns a Promise
+resolving the validated value.
 
 `params.validate` is a custom validator that can perform other validation rules
-as your needs. It will be invoked with the data value to validate, and the
-`opts` object will be forwarded.
+as your needs. It will be invoked with the data value to validate and its
+`opts` object.
 
-If `validate` is an array of validators, then the value is [reduced](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce)
+If `params.validate` is an array of validators, then the value is [reduced](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce)
 through all of them, returning the validated value.
 
 If a custom validator does not return a value, then the original data is
 concidered valid.
 
-A custom validator can return another validator, in this case it will be
-invoked with the original data and the `opts` object will be forwarded. This
-allows to build recursive validators.
+A custom validator can return another validator, in which case it will be
+invoked with the original data, and the `opts` object will be forwarded. It can
+also return an array of validators to be reduced.
 
 > Note: here, original data refers to the data passed in the function's first
 > argument.
@@ -198,12 +200,12 @@ Formatter: (value, opts) => any | Promise<any>
 ```
 
 A formatter is a function that takes a piece of data and some options, and must
-return the formatted value, or a promise resolving it.
+return or resolve the formatted value.
 
 ### Formatter
 
 ```js
-extra.Formatter(fields: {[string]: Formatter}) => Formatter
+extra.Formatter(fields: { [string]: Formatter }) => Formatter
 ```
 
 Create a formatter.
@@ -212,9 +214,9 @@ Create a formatter.
 
 The returned value is a formatter function, that can be invoked with any value
 as first argument, and which will be forwarded to all fields formatter
-functions, as long with `opts`. The created formatter always return a Promise
-resolving the formatted value.
+functions. The created formatter's options must map each fields to a specific
+options object for that field.
 
-The returned function has a `formatter.many` auxilliary function that expects
+The created formatter has a `formatter.many` auxilliary function that expects
 an array of values instead of a single one, and returns a Promise resolving
 an array of formatted values.
