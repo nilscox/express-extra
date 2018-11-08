@@ -1,8 +1,8 @@
 class ExpressExtraError extends Error {
 
-  constructor(status, message) {
-    super(message);
-    this.status = status;
+  constructor(message, status) {
+    super(message || ExpressExtraError.message);
+    this.status = status || ExpressExtraError.status;
   }
 
   toJSON() {
@@ -11,35 +11,56 @@ class ExpressExtraError extends Error {
 
 }
 
+ExpressExtraError.message = 'Error';
+ExpressExtraError.status = 500;
+
 class BadRequestError extends ExpressExtraError {
 
   constructor(message) {
-    super(400, message);
+    super(message || BadRequestError.message, BadRequestError.status);
   }
 
 }
+
+BadRequestError.message = 'Bad request';
+BadRequestError.status = 400;
 
 class NotFoundError extends ExpressExtraError {
 
-  constructor(resource) {
-    super(404, `${resource} not found`);
+  constructor(resource, message) {
+    super(message || NotFoundError.message, NotFoundError.status);
     this.resource = resource;
   }
 
+  toJSON() {
+    const json = super.toJSON();
+
+    if (this.resource)
+      json.resource = this.resource;
+
+    return json;
+  }
+
 }
+
+NotFoundError.message = 'Not found';
+NotFoundError.status = 404;
 
 class AuthorizationError extends ExpressExtraError {
 
   constructor(message) {
-    super(401, 'unauthorized' + (message ? ': ' + message : ''));
+    super(message || AuthorizationError.message, AuthorizationError.status);
   }
 
 }
 
+AuthorizationError.message = 'Unauthorized';
+AuthorizationError.status = 401;
+
 class ValidationError extends BadRequestError {
 
   constructor(message, field) {
-    super(message);
+    super(message || ValidationError.message);
     this.field = field;
   }
 
@@ -51,6 +72,8 @@ class ValidationError extends BadRequestError {
   }
 
 }
+
+ValidationError.message = 'Invalid';
 
 class ValidationErrors extends ValidationError {
 
@@ -73,7 +96,7 @@ class ValidationErrors extends ValidationError {
       return arr;
     }, []).join('\n');
 
-    super(`ValidationErrors: ${total} errors\n` + message, field);
+    super(`ValidationErrors: ${total} error${total > 1 ? 's' : ''}\n` + message, field);
     this.errors = errors;
   }
 
@@ -96,28 +119,34 @@ class ValidationErrors extends ValidationError {
 
 class MissingValueError extends ValidationError {
 
-  constructor(field) {
-    super('this field is required', field);
+  constructor(message, field) {
+    super(message || MissingValueError.message, field);
   }
 
 }
+
+MissingValueError.message = 'Missing value';
 
 class ReadOnlyValueError extends ValidationError {
 
-  constructor(field) {
-    super('this field is read only', field);
+  constructor(message, field) {
+    super(message || ReadOnlyValueError.message, field);
   }
 
 }
 
+ReadOnlyValueError.message = 'Read only value';
+
 class InvalidValueTypeError extends ValidationError {
 
-  constructor(type, field) {
-    super(`this field must be of type ${type}`, field);
+  constructor(type, message, field) {
+    super(message || InvalidValueTypeError.message, field);
     this.type = type;
   }
 
 }
+
+InvalidValueTypeError.message = 'Invalid value type';
 
 module.exports = {
   ExpressExtraError,
