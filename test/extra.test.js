@@ -104,21 +104,6 @@ describe('extra', () => {
       }
     });
 
-    it('should be possible to access req.validated in authorize', async () => {
-      const spy = sinon.spy(req => {
-        expect(req.validated).to.deep.eql({ foo: 42 });
-      });
-
-      const middlewares = extra(() => {}, {
-        validate: req => ({ foo: 42 }),
-        authorize: spy,
-      });
-
-      await runMiddlewares(middlewares);
-      expect(middlewares).to.have.lengthOf(3);
-      expect(spy.called).to.be.true;
-    });
-
   });
 
   describe('validation', () => {
