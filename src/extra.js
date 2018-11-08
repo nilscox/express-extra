@@ -36,9 +36,18 @@ module.exports = (handle, opts = {}) => {
       if (opts.format)
         result = await opts.format(result, opts.formatOpts);
 
-      if (typeof result === 'undefined')
-        res.status(204).end();
-      else if (typeof result === 'string')
+      if (opts.finish)
+        return await opts.finish(req, res, result);
+
+      if (opts.status)
+        res.status(opts.status);
+
+      if (typeof result === 'undefined') {
+        if (!opts.status)
+          res.status(204);
+
+        res.end();
+      } else if (typeof result === 'string')
         res.send(result);
       else
         res.json(result);

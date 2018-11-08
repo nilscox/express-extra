@@ -226,6 +226,69 @@ describe('extra', () => {
 
   });
 
+  describe('finish', () => {
+
+    it('should invoke the finish callback', async () => {
+      const spy = sinon.spy((req, res, result) => {
+        expect(req).to.have.property('req', true);
+        expect(res).to.have.property('res', true);
+        expect(result).to.have.property('some', 'data');
+        res.end();
+      });
+
+      const middlewares = extra(() => ({ some: 'data' }), {
+        finish: spy,
+      });
+
+      const { req, res } = await runMiddlewares(middlewares);
+
+      expect(middlewares).to.have.lengthOf(1);
+      expect(spy.called).to.be.true;
+      expect(res.end.called).to.be.true;
+    });
+
+    it('should set a given status', async () => {
+      const middlewares = extra(() => {}, {
+        status: 418,
+      });
+
+      const { req, res } = await runMiddlewares(middlewares);
+
+      expect(middlewares).to.have.lengthOf(1);
+      expect(res.status.called).to.be.true;
+      expect(res.mock.status).to.eql(418);
+    });
+
+    it('should finish a request with undefined', async () => {
+      const middlewares = extra(() => {});
+
+      const { req, res } = await runMiddlewares(middlewares);
+
+      expect(middlewares).to.have.lengthOf(1);
+      expect(res.mock.status).to.eql(204);
+      expect(res.end.called).to.be.true;
+    });
+
+    it('should finish a request with a string', async () => {
+      const middlewares = extra(() => 'hello ello');
+
+      const { req, res } = await runMiddlewares(middlewares);
+
+      expect(middlewares).to.have.lengthOf(1);
+      expect(res.send.called).to.be.true;
+    });
+
+    it('should finish a request with something else', async () => {
+      const middlewares = extra(() => 42.24);
+
+      const { req, res } = await runMiddlewares(middlewares);
+
+      expect(middlewares).to.have.lengthOf(1);
+      expect(res.json.called).to.be.true;
+    });
+
+  });
+
   describe('readme examples', () => {
 
   });
