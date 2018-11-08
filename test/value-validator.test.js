@@ -226,11 +226,15 @@ it('should validate a field through multiple validation functions', async () => 
 
   it('should override field specs with the options', async () => {
     const validateRequire = ValueValidator({
+      type: 'number',
       required: true,
     });
 
     await expect(validateRequire(undefined, { required: false })).to.eventually.eql(undefined);
-    await expect(validateRequire(null, { many: true })).to.be.rejectedWith(InvalidValueTypeError);
+    await expect(validateRequire([1, 2, 3], { many: true })).to.be.eventually.eql([1, 2, 3]);
+    await expect(validateRequire(null, { allowNull: true })).to.be.eventually.eql(null);
+    await expect(validateRequire(1234, { readOnly: true })).to.be.rejectedWith(ReadOnlyValueError);
+    await expect(validateRequire(undefined, { defaultValue: 42 })).to.be.eventually.eql(42);
   });
 
 });
