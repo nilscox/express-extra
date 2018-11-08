@@ -9,13 +9,12 @@ ExpressMiddleware: (req, res, next) => any
 Handler: (req: Request, res: Response) => any | Promise<any>
 ExtraOpts: {
   authorize?: Authorizer,
-  authorizeOpts?: any,
   validate?: Validator,
-  validateOpts?: any,
   format?: Formatter,
-  formatOpts?: any,
-  before: ExpressMiddleware || Array<ExpressMiddleware>,
-  after: ExpressMiddleware || Array<ExpressMiddleware>,
+  before?: ExpressMiddleware || Array<ExpressMiddleware>,
+  after?: ExpressMiddleware || Array<ExpressMiddleware>,
+  finish?: (req: Request, res: Response, result: any) => any | Promise<any>,
+  status?: number,
 }
 ```
 
@@ -23,17 +22,29 @@ Create an express-complient request handler, supporting authorization, data
 validation and response formatting. The handler can be [`async`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function)
 or return a [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise).
 
-- handler: the actual handler
-- opts: the handler's options (self descriptive)
+- handler: the actual handler function
+- opts.authorize: an authorizer that will be invoked with the `req` object.
+- opts.validate: a validator that will be invoked with the `req` object. The
+  value it returns or resolves is stored in `req.validated`.
+- opts.format: a formatter that will be invoked with the value returned or
+  resolved by the handler.
+- opts.before: an express middleware invoked before the request is processed.
+- opts.after: an express middleware invoked after the request has been processed.
+- opts.finish: a function invoked to end the request.
+- opts.status: the status code to set if the request ends correctly.
 
-The value returned or resolved by the validator is stored in `req.validated`,
-and can be accessed by the authorizer and the handler. The value returned or
-resolved by the handler is forwarded to the formatter, if any.
+None of the options are mandatory. If any function throws an error, then the
+`next` callback is invoked with the error. It can be handled by the
+`opts.after` callback, or by an error middleware handler later in the whole
+chain.
 
-If the final value (returned by the handler, and eventually formatted), can be
-of type:
+If the `opts.finish` callback is not provided, a default one will process the
+value returned by the handler (and eventually formatted) according to its type,
+and call [`res.status`](http://expressjs.com/en/4x/api.html#res.status) with
+`opts.status`, if any. If the value is of type:
 
-- `undefined`: the response status will is set to 204, and the request ends.
+- `undefined`: the request ends with [`res.end`](http://expressjs.com/en/4x/api.html#res.end).
+  If `opts.status` is not provided, the status code is set to 204 (No content).
 - `string`: the request ends with [`res.send`](http://expressjs.com/en/4x/api.html#res.send).
 - anything else: the request ends with [`res.json`](http://expressjs.com/en/4x/api.html#res.json).
 
