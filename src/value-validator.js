@@ -58,23 +58,30 @@ const ValueValidator = module.exports = field => async (data, opts = {}) => {
   if (allowNull && data === null)
     return null;
 
-  const callValidate = async (data, validate) => {
-    try {
-      const validated = await validate(data, opts);
+  const callValidate = (data, validate) => {
+    const doCallIt = async (data, validate) => {
+      try {
+        const validated = await validate(data, opts);
 
-      if (typeof validated === 'function')
-        return await callValidate(data, validated);
+        if (typeof validated === 'function' || validated instanceof Array)
+          return await callValidate(data, validated);
 
-      if (validated !== undefined)
-        return validated;
+        if (validated !== undefined)
+          return validated;
 
-      return data;
-    } catch (e) {
-      if (type && !isPrimitiveType(type) && e instanceof InvalidValueTypeError)
-        e.type = type;
+        return data;
+      } catch (e) {
+        if (type && !isPrimitiveType(type) && e instanceof InvalidValueTypeError)
+          e.type = type;
 
-      throw e;
-    }
+        throw e;
+      }
+    };
+
+    if (validate instanceof Array)
+      return Promise.reduce(validate, doCallIt, data);
+    else
+      return doCallIt(data, validate);
   };
 
   if (many) {
