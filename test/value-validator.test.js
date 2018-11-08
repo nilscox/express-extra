@@ -1,5 +1,12 @@
 const expect = require('./expect');
-const { ValueValidator, ValidationError } = require('../index');
+const {
+  ValueValidator,
+  ValidationError,
+  ValidationErrors,
+  MissingValueError,
+  ReadOnlyValueError,
+  InvalidValueTypeError,
+} = require('../index');
 
 describe('ValueValidator', () => {
 
@@ -8,9 +15,9 @@ describe('ValueValidator', () => {
       type: 'number',
     });
 
-    expect(await validateTypeNumber(42)).to.eql(42);
-    await expect(validateTypeNumber(null)).to.be.rejectedWith(/of type number/);
-    await expect(validateTypeNumber('foo')).to.be.rejectedWith(/of type number/);
+    await expect(validateTypeNumber(42)).to.eventually.eql(42);
+    await expect(validateTypeNumber(null)).to.be.rejectedWith(InvalidValueTypeError);
+    await expect(validateTypeNumber('foo')).to.be.rejectedWith(InvalidValueTypeError);
   });
 
   it('should validate a field type, allowing null', async () => {
@@ -19,9 +26,9 @@ describe('ValueValidator', () => {
       allowNull: true,
     });
 
-    expect(await validateTypeNumber(42)).to.eql(42);
-    expect(await validateTypeNumber(null)).to.eql(null);
-    await expect(validateTypeNumber('foo')).to.be.rejectedWith(/of type number/);
+    await expect(validateTypeNumber(42)).to.eventually.eql(42);
+    await expect(validateTypeNumber(null)).to.eventually.eql(null);
+    await expect(validateTypeNumber('foo')).to.be.rejectedWith(InvalidValueTypeError);
   });
 
   it('should validate a required field', async () => {
@@ -29,10 +36,10 @@ describe('ValueValidator', () => {
       required: true,
     });
 
-    expect(await validateRequired(42)).to.eql(42);
-    expect(await validateRequired('foo')).to.eql('foo');
-    expect(await validateRequired(null)).to.eql(null);
-    await expect(validateRequired(undefined)).to.be.rejectedWith(/is required/);
+    await expect(validateRequired(42)).to.eventually.eql(42);
+    await expect(validateRequired('foo')).to.eventually.eql('foo');
+    await expect(validateRequired(null)).to.eventually.eql(null);
+    await expect(validateRequired(undefined)).to.be.rejectedWith(MissingValueError);
   });
 
   it('should validate a field with a default value', async () => {
@@ -40,10 +47,10 @@ describe('ValueValidator', () => {
       defaultValue: 321,
     });
 
-    expect(await validateDefault(42)).to.eql(42);
-    expect(await validateDefault('foo')).to.eql('foo');
-    expect(await validateDefault(null)).to.eql(null);
-    expect(await validateDefault(undefined)).to.eql(321);
+    await expect(validateDefault(42)).to.eventually.eql(42);
+    await expect(validateDefault('foo')).to.eventually.eql('foo');
+    await expect(validateDefault(null)).to.eventually.eql(null);
+    await expect(validateDefault(undefined)).to.eventually.eql(321);
   });
 
   it('should validate a required field with a default value', async () => {
@@ -52,7 +59,7 @@ describe('ValueValidator', () => {
       defaultValue: 321,
     });
 
-    expect(await validateDefault(undefined)).to.eql(321);
+    await expect(validateDefault(undefined)).to.eventually.eql(321);
   });
 
   it('should validate a required field with a default value of an incorrect type', async () => {
@@ -62,7 +69,7 @@ describe('ValueValidator', () => {
       defaultValue: 'coucou',
     });
 
-    await expect(validateDefault(undefined)).to.be.rejectedWith(/of type number/);
+    await expect(validateDefault(undefined)).to.be.rejectedWith(InvalidValueTypeError);
   });
 
   it('should validate a readOnly field', async () => {
@@ -70,8 +77,8 @@ describe('ValueValidator', () => {
       readOnly: true,
     });
 
-    await expect(validateDefault(42)).to.be.rejectedWith(/read only/);
-    expect(await validateDefault(undefined)).to.be.undefined;
+    await expect(validateDefault(42)).to.be.rejectedWith(ReadOnlyValueError);
+    await expect(validateDefault(undefined)).to.eventually.be.undefined;
   });
 
   it('should validate a field through a validation function', async () => {
@@ -85,7 +92,7 @@ describe('ValueValidator', () => {
       },
     });
 
-    expect(await validateFunc(42)).to.eql(42);
+    await expect(validateFunc(42)).to.eventually.eql(42);
     await expect(validateFunc(-69)).to.be.rejectedWith(/must be positive/);
   });
 
@@ -95,7 +102,7 @@ describe('ValueValidator', () => {
       validate: value => value + 1,
     });
 
-    expect(await validateFunc(42)).to.eql(43);
+    await expect(validateFunc(42)).to.eventually.eql(43);
   });
 
   it('should validate a field through a validation function returning a validation function', async () => {
@@ -104,7 +111,57 @@ describe('ValueValidator', () => {
       validate: a => b => c => a + b + c,
     });
 
-    expect(await validateFunc(4)).to.eql(12);
+    await expect(validateFunc(4)).to.eventually.eql(12);
+  });
+
+it('should validate a field through multiple validation functions', async () => {
+    const validateFunc = ValueValidator({
+      type: 'number',
+      validate: [
+        value => {
+          if (value < 0)
+            throw new ValidationError('this field must be positive');
+        },
+        value => {
+          if (value > 100)
+            throw new ValidationError('this field must be < 100');
+        },
+      ],
+    });
+
+    await expect(validateFunc(42)).to.eventually.eql(42);
+    await expect(validateFunc(-69)).to.be.rejectedWith(/must be positive/);
+    await expect(validateFunc(123)).to.be.rejectedWith(/must be < 100/);
+  });
+
+  it('should validate a field through multiple validation functions returning values', async () => {
+    const validateFunc = ValueValidator({
+      type: 'number',
+      validate: [
+        value => value + 1,
+        value => {
+          if (value > 100)
+            throw new ValidationError('this field must be < 100');
+        },
+        value => value * 2,
+      ],
+    });
+
+    await expect(validateFunc(4)).to.eventually.eql(10);
+    await expect(validateFunc(666)).to.be.rejectedWith(/must be < 100/);
+  });
+
+  it('should validate a field through multiple validation functions returning validation functions', async () => {
+    const validateFunc = ValueValidator({
+      type: 'number',
+      validate: [
+        a => b => a + b,
+        c => c + 1,
+        d => e => d * 2 + e,
+      ],
+    });
+
+    await expect(validateFunc(4)).to.eventually.eql(27);
   });
 
   it('should validate an array', async () => {
@@ -112,10 +169,10 @@ describe('ValueValidator', () => {
       many: true,
     });
 
-    expect(await validateArray([])).to.eql([]);
-    expect(await validateArray([1, 2, 3])).to.eql([1, 2, 3]);
-    expect(await validateArray(['foo', 'bar'])).to.eql(['foo', 'bar']);
-    await expect(validateArray(null)).to.be.rejectedWith(/of type Array/);
+    await expect(validateArray([])).to.eventually.eql([]);
+    await expect(validateArray([1, 2, 3])).to.eventually.eql([1, 2, 3]);
+    await expect(validateArray(['foo', 'bar'])).to.eventually.eql(['foo', 'bar']);
+    await expect(validateArray(null)).to.be.rejectedWith(InvalidValueTypeError);
   });
 
   it('should validate an array, allowing null', async () => {
@@ -124,10 +181,10 @@ describe('ValueValidator', () => {
       allowNull: true,
     });
 
-    expect(await validateArray([])).to.eql([]);
-    expect(await validateArray([1, 2, 3])).to.eql([1, 2, 3]);
-    expect(await validateArray(['foo', 'bar'])).to.eql(['foo', 'bar']);
-    expect(await validateArray(null)).to.eql(null);
+    await expect(validateArray([])).to.eventually.eql([]);
+    await expect(validateArray([1, 2, 3])).to.eventually.eql([1, 2, 3]);
+    await expect(validateArray(['foo', 'bar'])).to.eventually.eql(['foo', 'bar']);
+    await expect(validateArray(null)).to.eventually.eql(null);
   });
 
   it('should validate an array of numbers', async () => {
@@ -136,11 +193,11 @@ describe('ValueValidator', () => {
       many: true,
     });
 
-    expect(await validateArrayNumber([])).to.eql([]);
-    expect(await validateArrayNumber([1, 2, 3])).to.eql([1, 2, 3]);
-    await expect(validateArrayNumber(null)).to.be.rejectedWith(/of type Array<number>/);
-    await expect(validateArrayNumber('foo')).to.be.rejectedWith(/of type Array<number>/);
-    await expect(validateArrayNumber([1, 'foo', 3])).to.be.rejectedWith(/\[1\] => .* of type number/);
+    await expect(validateArrayNumber([])).to.eventually.eql([]);
+    await expect(validateArrayNumber([1, 2, 3])).to.eventually.eql([1, 2, 3]);
+    await expect(validateArrayNumber(null)).to.be.rejectedWith(InvalidValueTypeError).then(e => expect(e.type).to.eql('Array<number>'));
+    await expect(validateArrayNumber('foo')).to.be.rejectedWith(InvalidValueTypeError).then(e => expect(e.type).to.eql('Array<number>'));
+    await expect(validateArrayNumber([1, 'foo', 3])).to.be.rejectedWith(ValidationErrors).then(e => expect(e.errors[0].type).to.eql('number'));
   });
 
   it('should validate an array of numbers, allowing null', async () => {
@@ -150,11 +207,11 @@ describe('ValueValidator', () => {
       allowNull: true,
     });
 
-    expect(await validateArrayNumber([])).to.eql([]);
-    expect(await validateArrayNumber([1, 2, 3])).to.eql([1, 2, 3]);
-    expect(await validateArrayNumber(null)).to.eql(null);
-    await expect(validateArrayNumber('foo')).to.be.rejectedWith(/of type Array<number>/);
-    await expect(validateArrayNumber([1, 'foo', 3])).to.be.rejectedWith(/\[1\] => .* of type number/);
+    await expect(validateArrayNumber([])).to.eventually.eql([]);
+    await expect(validateArrayNumber([1, 2, 3])).to.eventually.eql([1, 2, 3]);
+    await expect(validateArrayNumber(null)).to.eventually.eql(null);
+    await expect(validateArrayNumber('foo')).to.be.rejectedWith(InvalidValueTypeError);
+    await expect(validateArrayNumber([1, 'foo', 3])).to.be.rejectedWith(ValidationErrors);
   });
 
   it('should forward the options to a validation function', async () => {
@@ -172,7 +229,7 @@ describe('ValueValidator', () => {
       required: true,
     });
 
-    expect(await validateRequire(undefined, { partial: true })).to.eql(undefined);
+    await expect(validateRequire(undefined, { partial: true })).to.eventually.eql(undefined);
   });
 
   it('should override field specs with the options', async () => {
@@ -180,8 +237,8 @@ describe('ValueValidator', () => {
       required: true,
     });
 
-    expect(await validateRequire(undefined, { required: false })).to.eql(undefined);
-    await expect(validateRequire(null, { many: true })).to.be.rejectedWith(/of type Array/);
+    await expect(validateRequire(undefined, { required: false })).to.eventually.eql(undefined);
+    await expect(validateRequire(null, { many: true })).to.be.rejectedWith(InvalidValueTypeError);
   });
 
 });
