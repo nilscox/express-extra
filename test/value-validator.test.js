@@ -224,14 +224,6 @@ it('should validate a field through multiple validation functions', async () => 
     await validateFunc(null, { foo: 42 });
   });
 
-  it.skip('should partially validate a required field', async () => {
-    const validateRequire = ValueValidator({
-      required: true,
-    });
-
-    await expect(validateRequire(undefined, { partial: true })).to.eventually.eql(undefined);
-  });
-
   it('should override field specs with the options', async () => {
     const validateRequire = ValueValidator({
       required: true,
