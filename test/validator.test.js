@@ -98,6 +98,14 @@ describe('Validator', () => {
       await expect(itemValidator({ a: 42 }, { a: { foo: 'bar' } })).to.eventually.deep.eql({ a: 42 });
     });
 
+    it('should skip a field validator if the option is set to false', async () => {
+      const itemValidator = Validator({
+        a: () => { throw new ValidationError('a is invalid') },
+      });
+
+      await expect(itemValidator({ a: 42 }, { a: false })).to.eventually.deep.eql({});
+    });
+
   });
 
   describe('with ValueValidator', () => {

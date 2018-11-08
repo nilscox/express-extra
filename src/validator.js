@@ -15,7 +15,8 @@ const Validator = module.exports = (fields) => {
       const key = keys[i];
 
       try {
-        validated[key] = await fields[key](data[key], opts[key] || {});
+        if (opts[key] !== false)
+          validated[key] = await fields[key](data[key], opts[key] || {});
       } catch (e) {
         if (!(e instanceof ValidationError))
           throw e;
