@@ -73,14 +73,12 @@ describe('extra', () => {
   describe('authorization', () => {
 
     it('should invoke an authorization function', async () => {
-      const spy = sinon.spy((req, opts) => {
+      const spy = sinon.spy(req => {
         expect(req).to.have.property('req', true);
-        expect(opts).to.deep.eql({ ki: 'kou' });
       });
 
       const middlewares = extra(() => {}, {
         authorize: spy,
-        authorizeOpts: { ki: 'kou'},
       });
 
       const { req, res } = await runMiddlewares(middlewares);
@@ -113,16 +111,14 @@ describe('extra', () => {
   describe('validation', () => {
 
     it('should invoke a validation function', async () => {
-      const spy = sinon.spy((req, opts) => {
+      const spy = sinon.spy(req => {
         expect(req).to.have.property('req', true);
-        expect(opts).to.deep.eql({ ki: 'kou' });
 
         return 'valid';
       });
 
       const middlewares = extra(() => {}, {
         validate: spy,
-        validateOpts: { ki: 'kou'},
       });
 
       const { req, res } = await runMiddlewares(middlewares);
@@ -204,16 +200,14 @@ describe('extra', () => {
   describe('format', () => {
 
     it('should invoke a formatting function', async () => {
-      const spy = sinon.spy((data, opts) => {
+      const spy = sinon.spy(data => {
         expect(data).to.have.property('some', 'data');
-        expect(opts).to.deep.eql({ ki: 'kou' });
 
         return { some: data.some.toUpperCase() };
       });
 
       const middlewares = extra(() => ({ some: 'data' }), {
         format: spy,
-        formatOpts: { ki: 'kou'},
       });
 
       const { req, res } = await runMiddlewares(middlewares);

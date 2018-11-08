@@ -19,13 +19,13 @@ module.exports = (handle, opts = {}) => {
 
   if (opts.authorize) {
     middlewares.push(trycatch(async (req, res, next) => {
-      await opts.authorize(req, opts.authorizeOpts);
+      await opts.authorize(req);
     }));
   }
 
   if (opts.validate) {
     middlewares.push(trycatch(async (req, res, next) => {
-      req.validated = await opts.validate(req, opts.validateOpts);
+      req.validated = await opts.validate(req);
     }));
   }
 
@@ -34,7 +34,7 @@ module.exports = (handle, opts = {}) => {
       let result = await handle(req, res);
 
       if (opts.format)
-        result = await opts.format(result, opts.formatOpts);
+        result = await opts.format(result);
 
       if (opts.finish)
         return await opts.finish(req, res, result);
