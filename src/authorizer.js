@@ -24,7 +24,7 @@ const Authorizer = module.exports = (authorizer, message) => {
 
         result = false;
       } finally {
-        if (result !== false)  
+        if (result !== false)
           throw new AuthorizationError(message);
       }
     };

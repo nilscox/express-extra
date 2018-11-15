@@ -1,9 +1,9 @@
 const ValueValidator = require('./value-validator');
 const { ValidationError, ValidationErrors, InvalidValueTypeError } = require('./errors');
 
-const Validator = module.exports = (fields) => {
+const Validator = module.exports = (fields, globalValidation) => {
 
-  const validateObject = async (data, opts = {}) => {
+  const validateObject = async (data, opts = {}, globalOpts = {}) => {
     const validated = {};
     const errors = [];
     const keys = Object.keys(fields);
@@ -28,6 +28,9 @@ const Validator = module.exports = (fields) => {
 
     if (errors.length > 0)
       throw new ValidationErrors(errors);
+
+    if (globalValidation)
+      await globalValidation(validated, globalOpts);
 
     return validated;
   };
