@@ -26,7 +26,6 @@ describe('demo', () => {
   const GOT = { id: 1, title: 'Game of thrones', nbPages: 645 };
   const H2G2 = { id: 2, title: 'The hichicker\'s guide to the galaxy', nbPages: 137 };
   const DG = { id: 3, title: 'Dirk Genlty\'s holistic detective agency', nbPages: 239 };
-  const TPP = { id: 4, title: 'The Pirate Planet', nbPages: 341 };
 
 
   it('demo', async () => {
@@ -37,6 +36,7 @@ describe('demo', () => {
       .expect(200, []);
 
     await agent.post('/api/author')
+      .set('token', 'zorglub')
       .send({ firstname: 'Gorges', lastname: 'Martin' })
       .expect(201, GM);
 
@@ -47,6 +47,7 @@ describe('demo', () => {
       .expect(200, { ...GM, books: [] });
 
     await agent.post('/api/book')
+      .set('token', 'zorglub')
       .send({
         title: 'Game of thrones',
         EAN: '1234567890123',
@@ -56,6 +57,7 @@ describe('demo', () => {
       .expect(201, { ...GOT, author: GM });
 
     await agent.post('/api/book')
+      .set('token', 'zorglub')
       .send({
         title: 'The hichicker\'s guide to the galaxy',
         EAN: '1230123456789',
@@ -68,6 +70,7 @@ describe('demo', () => {
       .expect(201, { ...H2G2, author: DA });
 
     await agent.post('/api/book')
+      .set('token', 'zorglub')
       .send({
         title: 'Dirk Genlty\'s holistic detective agency',
         EAN: '1231234567890',
@@ -84,25 +87,6 @@ describe('demo', () => {
 
     await agent.get('/api/author/2')
       .expect(200, { ...DA, books: [H2G2, DG] });
-
-    await agent.post('/api/book')
-      .send({
-        title: 'The Pirate Planet',
-        nbPages: 341,
-        EAN: '1234567890321',
-        authorId: 2,
-      })
-      .expect(401, { error: 'book creation quota exceeded' });
-
-    await agent.post('/api/book')
-      .send({
-        title: 'The Pirate Planet',
-        nbPages: 341,
-        EAN: '1234567890321',
-        authorId: 2,
-      })
-      .set('token', 'zorglub')
-      .expect(201, { ...TPP, author: DA });
   });
 
 });

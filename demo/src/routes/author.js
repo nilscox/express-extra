@@ -1,7 +1,7 @@
 const express = require('express');
 const { extra, NotFoundError, BadRequestError, Authorizer } = require('express-extra');
 const { Author, Book } = require('../db');
-const { isAdmin, isUser, hasEnoughAuthorQuota } = require('../authorization');
+const { isAdmin } = require('../authorization');
 const { authorValidator } = require('../validators');
 const { authorFormatter } = require('../formatters');
 
@@ -34,20 +34,9 @@ router.get('/:id', extra((req) => {
 }));
 
 router.post('/', extra(async (req, res) => {
-  const created = await Author.create(req.validated);
-
-  if (req.user)
-    req.user.quotas.author++;
-
-  return created;
+  return await Author.create(req.validated);
 }, {
-  authorize: Authorizer.or([
-    isAdmin,
-    Authorizer.and([
-      isUser,
-      hasEnoughAuthorQuota,
-    ]),
-  ]),
+  authorize: isAdmin,
   validate: req => authorValidator(req.body),
   format: value => authorFormatter(value, { books: false }),
   status: 201,

@@ -4,7 +4,7 @@ h() {
   echo
 }
 
-h GET :4242/api/author
+h GET :4242/api/author token:zorglub
 h GET :4242/api/book
 
 h POST :4242/api/author firstname:='"Gorges"' lastname:='"Martin"'
@@ -19,8 +19,5 @@ h POST :4242/api/book title:="\"Dirk Genlty's holistic detective agency\"" EAN:=
 h GET :4242/api/book
 h GET :4242/api/book/1
 h GET :4242/api/author/2
-
-h POST :4242/api/book title:="\"The Pirate Planet\"" EAN:="\"1234567890321\"" nbPages:=341 authorId:=2
-h POST :4242/api/book token:zorglub title:="\"The Pirate Planet\"" EAN:="\"1234567890321\"" nbPages:=341 authorId:=2
 
 rm -f /tmp/httpie.session
