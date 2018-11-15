@@ -1,6 +1,6 @@
 h() {
-  echo "$@" | sed 's/:4242//'
-  http --session /tmp/httpie.session -p b --pretty=none "$@" | jq .
+  echo "$1 $2" | sed 's/:4242//'
+  http --session /tmp/httpie.session -p Bb --pretty=none "$@" | jq .
   echo
 }
 

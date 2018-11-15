@@ -21,9 +21,9 @@ describe('demo', () => {
   const agent = request.agent(app);
 
   const GM = { id: 1, name: 'Gorges MARTIN' };
-  const GOT = { id: 1, title: 'Game of thrones', nbPages: 645 };
-
   const DA = { id: 2, name: 'Douglas ADAMS' };
+
+  const GOT = { id: 1, title: 'Game of thrones', nbPages: 645 };
   const H2G2 = { id: 2, title: 'The hichicker\'s guide to the galaxy', nbPages: 137 };
   const DG = { id: 3, title: 'Dirk Genlty\'s holistic detective agency', nbPages: 239 };
   const TPP = { id: 4, title: 'The Pirate Planet', nbPages: 341 };

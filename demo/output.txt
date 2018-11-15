@@ -4,7 +4,11 @@ GET /api/author
 GET /api/book
 []
 
-POST /api/author firstname:="Gorges" lastname:="Martin"
+POST /api/author
+{
+  "firstname": "Gorges",
+  "lastname": "Martin"
+}
 {
   "id": 1,
   "name": "Gorges MARTIN"
@@ -26,7 +30,13 @@ GET /api/author/1
   "books": []
 }
 
-POST /api/book title:="Game of thrones" EAN:="1234567890123" nbPages:=645 authorId:=1
+POST /api/book
+{
+  "title": "Game of thrones",
+  "EAN": "1234567890123",
+  "nbPages": 645,
+  "authorId": 1
+}
 {
   "id": 1,
   "title": "Game of thrones",
@@ -37,7 +47,16 @@ POST /api/book title:="Game of thrones" EAN:="1234567890123" nbPages:=645 author
   }
 }
 
-POST /api/book title:="The hichicker's guide to the galaxy" EAN:="1230123456789" nbPages:=137 author:={"firstname":"Douglas","lastname":"Adams"}
+POST /api/book
+{
+  "title": "The hichicker's guide to the galaxy",
+  "EAN": "1230123456789",
+  "nbPages": 137,
+  "author": {
+    "firstname": "Douglas",
+    "lastname": "Adams"
+  }
+}
 {
   "id": 2,
   "title": "The hichicker's guide to the galaxy",
@@ -48,7 +67,13 @@ POST /api/book title:="The hichicker's guide to the galaxy" EAN:="1230123456789"
   }
 }
 
-POST /api/book title:="Dirk Genlty's holistic detective agency" EAN:="1231234567890" nbPages:=239 authorId:=2
+POST /api/book
+{
+  "title": "Dirk Genlty's holistic detective agency",
+  "EAN": "1231234567890",
+  "nbPages": 239,
+  "authorId": 2
+}
 {
   "id": 3,
   "title": "Dirk Genlty's holistic detective agency",
@@ -119,12 +144,24 @@ GET /api/author/2
   ]
 }
 
-POST /api/book title:="The Pirate Planet" EAN:="1234567890321" nbPages:=341 authorId:=2
+POST /api/book
+{
+  "title": "The Pirate Planet",
+  "EAN": "1234567890321",
+  "nbPages": 341,
+  "authorId": 2
+}
 {
   "error": "book creation quota exceeded"
 }
 
-POST /api/book token:zorglub title:="The Pirate Planet" EAN:="1234567890321" nbPages:=341 authorId:=2
+POST /api/book
+{
+  "title": "The Pirate Planet",
+  "EAN": "1234567890321",
+  "nbPages": 341,
+  "authorId": 2
+}
 {
   "id": 4,
   "title": "The Pirate Planet",
