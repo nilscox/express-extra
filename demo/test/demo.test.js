@@ -1,7 +1,7 @@
 const fs = require('fs');
 const request = require('supertest');
-const app = require('../demo/src/app');
-const { Author, Book } = require('../demo/src/db');
+const app = require('../src/app');
+const { Author, Book } = require('../src/db');
 
 describe('demo', () => {
 
