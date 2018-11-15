@@ -1,0 +1,137 @@
+GET /api/author
+[]
+
+GET /api/book
+[]
+
+POST /api/author firstname:="Gorges" lastname:="Martin"
+{
+  "id": 1,
+  "name": "Gorges MARTIN"
+}
+
+GET /api/author
+[
+  {
+    "id": 1,
+    "name": "Gorges MARTIN",
+    "books": []
+  }
+]
+
+GET /api/author/1
+{
+  "id": 1,
+  "name": "Gorges MARTIN",
+  "books": []
+}
+
+POST /api/book title:="Game of thrones" EAN:="1234567890123" nbPages:=645 authorId:=1
+{
+  "id": 1,
+  "title": "Game of thrones",
+  "nbPages": 645,
+  "author": {
+    "id": 1,
+    "name": "Gorges MARTIN"
+  }
+}
+
+POST /api/book title:="The hichicker's guide to the galaxy" EAN:="1230123456789" nbPages:=137 author:={"firstname":"Douglas","lastname":"Adams"}
+{
+  "id": 2,
+  "title": "The hichicker's guide to the galaxy",
+  "nbPages": 137,
+  "author": {
+    "id": 2,
+    "name": "Douglas ADAMS"
+  }
+}
+
+POST /api/book title:="Dirk Genlty's holistic detective agency" EAN:="1231234567890" nbPages:=239 authorId:=2
+{
+  "id": 3,
+  "title": "Dirk Genlty's holistic detective agency",
+  "nbPages": 239,
+  "author": {
+    "id": 2,
+    "name": "Douglas ADAMS"
+  }
+}
+
+GET /api/book
+[
+  {
+    "id": 1,
+    "title": "Game of thrones",
+    "nbPages": 645,
+    "author": {
+      "id": 1,
+      "name": "Gorges MARTIN"
+    }
+  },
+  {
+    "id": 2,
+    "title": "The hichicker's guide to the galaxy",
+    "nbPages": 137,
+    "author": {
+      "id": 2,
+      "name": "Douglas ADAMS"
+    }
+  },
+  {
+    "id": 3,
+    "title": "Dirk Genlty's holistic detective agency",
+    "nbPages": 239,
+    "author": {
+      "id": 2,
+      "name": "Douglas ADAMS"
+    }
+  }
+]
+
+GET /api/book/1
+{
+  "id": 1,
+  "title": "Game of thrones",
+  "nbPages": 645,
+  "author": {
+    "id": 1,
+    "name": "Gorges MARTIN"
+  }
+}
+
+GET /api/author/2
+{
+  "id": 2,
+  "name": "Douglas ADAMS",
+  "books": [
+    {
+      "id": 2,
+      "title": "The hichicker's guide to the galaxy",
+      "nbPages": 137
+    },
+    {
+      "id": 3,
+      "title": "Dirk Genlty's holistic detective agency",
+      "nbPages": 239
+    }
+  ]
+}
+
+POST /api/book title:="The Pirate Planet" EAN:="1234567890321" nbPages:=341 authorId:=2
+{
+  "error": "book creation quota exceeded"
+}
+
+POST /api/book token:zorglub title:="The Pirate Planet" EAN:="1234567890321" nbPages:=341 authorId:=2
+{
+  "id": 4,
+  "title": "The Pirate Planet",
+  "nbPages": 341,
+  "author": {
+    "id": 2,
+    "name": "Douglas ADAMS"
+  }
+}
+

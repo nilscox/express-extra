@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "test": "mocha",
+    "test": "DEMO_DB=\"${PWD}/db.sqlite\" node node_modules/.bin/mocha",
     "test:coverage": "nyc mocha"
   },
   "peerDependencies": {
@@ -17,6 +17,7 @@
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "mocha": "^5.2.0",
-    "sinon": "^7.1.0"
+    "sinon": "^7.1.0",
+    "supertest": "^3.3.0"
   }
 }
