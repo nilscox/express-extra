@@ -39,6 +39,9 @@ app.get('/some-endpoint', extra(async (req, res) => {
 }));
 ```
 
+Have a look at the [demo](./demo) project for a deeper vision of
+`express-extra`.
+
 ## Contributing
 
 This tool is currently in development, I would really appreciate any kind of
