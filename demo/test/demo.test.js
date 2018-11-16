@@ -59,6 +59,24 @@ describe('demo', () => {
     await agent.post('/api/book')
       .set('token', 'zorglub')
       .send({
+        title: null,
+        nbPages: -8,
+        author: {
+          firstname: true,
+          lastname: '   ',
+        },
+      })
+      .expect(400, {
+        EAN: 'Missing value',
+        'author.firstname': 'Invalid value type',
+        'author.lastname': 'this field must not be empty',
+        nbPages: 'this field must be positive',
+        title: 'Invalid value type',
+      });
+
+    await agent.post('/api/book')
+      .set('token', 'zorglub')
+      .send({
         title: 'The hichicker\'s guide to the galaxy',
         EAN: '1230123456789',
         nbPages: 137,
@@ -87,6 +105,35 @@ describe('demo', () => {
 
     await agent.get('/api/author/2')
       .expect(200, { ...DA, books: [H2G2, DG] });
+
+    await agent.post('/api/book/1/rent')
+      .set('token', null)
+      .expect(200, 'Have fun reading ' + GOT.title + '!');
+
+    await agent.post('/api/book/1/rent')
+      .expect(400, { error: 'you already have this book' });
+
+    await agent.post('/api/book/2/rent')
+      .expect(200, 'Have fun reading ' + H2G2.title + '!');
+
+    await agent.post('/api/book/3/rent')
+      .expect(401, { error: 'quota exceeded' });
+
+    await agent.post('/api/book/2/return')
+      .expect(200, 'Thank you for returning ' + H2G2.title + '.');
+
+    await agent.post('/api/book/2/return')
+      .expect(400, { error: 'you don\'t have this book' });
+
+    await agent.post('/api/book/3/rent')
+      .expect(200, 'Have fun reading ' + DG.title + '!');
+
+    await agent.post('/api/book/2/rent')
+      .expect(401, { error: 'quota exceeded' });
+
+    await agent.post('/api/book/2/rent')
+      .set('token', 'zorglub')
+      .expect(200, 'Have fun reading ' + H2G2.title + '!');
   });
 
 });

@@ -1,20 +1,21 @@
-GET /api/author
+GET /api/author 200
 []
 
-GET /api/book
+GET /api/book 200
 []
 
-POST /api/author
+POST /api/author 201
 {
   "firstname": "Gorges",
-  "lastname": "Martin"
+  "lastname": "Martin",
+  "middlename": "R.R."
 }
 {
   "id": 1,
   "name": "Gorges MARTIN"
 }
 
-GET /api/author
+GET /api/author 200
 [
   {
     "id": 1,
@@ -23,14 +24,14 @@ GET /api/author
   }
 ]
 
-GET /api/author/1
+GET /api/author/1 200
 {
   "id": 1,
   "name": "Gorges MARTIN",
   "books": []
 }
 
-POST /api/book
+POST /api/book 201
 {
   "title": "Game of thrones",
   "EAN": "1234567890123",
@@ -47,7 +48,24 @@ POST /api/book
   }
 }
 
-POST /api/book
+POST /api/book 400
+{
+  "title": null,
+  "nbPages": -8,
+  "author": {
+    "firstname": true,
+    "lastname": "   "
+  }
+}
+{
+  "title": "Invalid value type",
+  "nbPages": "this field must be positive",
+  "EAN": "Missing value",
+  "author.firstname": "Invalid value type",
+  "author.lastname": "this field must not be empty"
+}
+
+POST /api/book 201
 {
   "title": "The hichicker's guide to the galaxy",
   "EAN": "1230123456789",
@@ -67,7 +85,7 @@ POST /api/book
   }
 }
 
-POST /api/book
+POST /api/book 201
 {
   "title": "Dirk Genlty's holistic detective agency",
   "EAN": "1231234567890",
@@ -84,7 +102,7 @@ POST /api/book
   }
 }
 
-GET /api/book
+GET /api/book 200
 [
   {
     "id": 1,
@@ -115,7 +133,7 @@ GET /api/book
   }
 ]
 
-GET /api/book/1
+GET /api/book/1 200
 {
   "id": 1,
   "title": "Game of thrones",
@@ -126,7 +144,7 @@ GET /api/book/1
   }
 }
 
-GET /api/author/2
+GET /api/author/2 200
 {
   "id": 2,
   "name": "Douglas ADAMS",
@@ -144,31 +162,33 @@ GET /api/author/2
   ]
 }
 
-POST /api/book
+POST /api/book/1/rent 200
+Have fun reading Game of thrones!
+
+POST /api/book/1/rent 400
 {
-  "title": "The Pirate Planet",
-  "EAN": "1234567890321",
-  "nbPages": 341,
-  "authorId": 2
-}
-{
-  "error": "book creation quota exceeded"
+  "error": "you already have this book"
 }
 
-POST /api/book
+POST /api/book/2/rent 200
+Have fun reading The hichicker's guide to the galaxy!
+
+POST /api/book/3/rent 401
 {
-  "title": "The Pirate Planet",
-  "EAN": "1234567890321",
-  "nbPages": 341,
-  "authorId": 2
+  "error": "quota exceeded"
 }
+
+POST /api/book/2/return 200
+Thank you for returning The hichicker's guide to the galaxy.
+
+POST /api/book/3/rent 200
+Have fun reading Dirk Genlty's holistic detective agency!
+
+POST /api/book/2/rent 401
 {
-  "id": 4,
-  "title": "The Pirate Planet",
-  "nbPages": 341,
-  "author": {
-    "id": 2,
-    "name": "Douglas ADAMS"
-  }
+  "error": "quota exceeded"
 }
+
+POST /api/book/2/rent 200
+Have fun reading The hichicker's guide to the galaxy!
 

@@ -1,5 +1,5 @@
 const express = require('express');
-const { extra, Authorizer } = require('express-extra');
+const { extra, Authorizer, BadRequestError, NotFoundError, ValidationError } = require('express-extra');
 const { Author, Book } = require('../db');
 const { isAdmin, isUser, hasEnoughQuota } = require('../authorization');
 const { bookValidator } = require('../validators');
@@ -50,8 +50,43 @@ router.post('/', extra(async req => {
   status: 201,
 }));
 
-router.delete('/:id', extra(async (req) => {
-  await req.book.destroy();
+router.post('/:id/rent', extra(req => {
+  if (req.user)
+    req.user.books.push(req.book.id);
+
+  return `Have fun reading ${req.book.title}!`;
 }, {
-  authorize: isAdmin,
+  authorize: Authorizer.or([
+    isAdmin,
+    Authorizer.and([
+      isUser,
+      hasEnoughQuota,
+    ]),
+  ]),
+  validate: req => {
+    if (req.user && req.user.books.includes(req.book.id))
+      throw new BadRequestError('you already have this book');
+  },
+}));
+
+router.post('/:id/return', extra(req => {
+  if (req.user)
+    req.user.books.splice(req.validated.bookIdx, 1);
+
+  return `Thank you for returning ${req.book.title}.`;
+}, {
+  authorize: Authorizer.or([
+    isAdmin,
+    isUser,
+  ]),
+  validate: req => {
+    if (req.user) {
+      const idx = req.user.books.indexOf(req.book.id);
+
+      if (idx < 0)
+        throw new BadRequestError('you don\'t have this book');
+
+      return { bookIdx: idx };
+    }
+  },
 }));

@@ -41,14 +41,3 @@ router.post('/', extra(async (req, res) => {
   format: value => authorFormatter(value, { books: false }),
   status: 201,
 }));
-
-router.delete('/:id', extra(async (req, res) => {
-  const { author } = req;
-
-  if (await author.countBooks() > 0)
-    throw new BadRequestError('this author still has books');
-
-  await author.destroy();
-}, {
-  authorize: isAdmin,
-}));

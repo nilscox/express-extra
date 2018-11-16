@@ -4,15 +4,15 @@ const isAdmin = Authorizer(req => req.get('token') === 'zorglub', 'you must be a
 
 const isUser = Authorizer(req => {
   if (!req.session.user)
-    req.session.user = { quota: 0 };
+    req.session.user = { books: [] };
 
   req.user = req.session.user;
 });
 
 const hasEnoughQuota = Authorizer(req => {
-  const { quota } = req.user;
+  const { books } = req.user;
 
-  if (quota >= 2)
+  if (books.length >= 2)
     throw new AuthorizationError('quota exceeded');
 });
 
