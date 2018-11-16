@@ -314,7 +314,7 @@ Now we can easily read all our data.
 You want to read a book? Let's rent GoT, which have the id `1`.
 
 `POST /api/book/1/rent 200`
-```plain
+```
 Have fun reading Game of thrones!
 ```
 
@@ -330,7 +330,7 @@ Now, we can't rent it again.
 ```
 
 `POST /api/book/2/rent 200`
-```js
+```
 Have fun reading The hichicker's guide to the galaxy!
 ```
 
@@ -346,12 +346,12 @@ We now have 2 books, and the limit is reached. We can't rent another book...
 But we can return one before!
 
 `POST /api/book/2/return 200`
-```plain
+```
 Thank you for returning The hichicker's guide to the galaxy.
 ```
 
 `POST /api/book/3/rent 200`
-```plain
+```
 Have fun reading Dirk Genlty's holistic detective agency!
 ```
 
@@ -368,7 +368,7 @@ But we still can rent the book if we are admin, in which case we need to
 include a header field : `token: zorglub`.
 
 `POST /api/book/2/rent (token: zorglub) 200`
-```js
+```
 Have fun reading The hichicker's guide to the galaxy!
 ```
 
