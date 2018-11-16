@@ -85,12 +85,16 @@ Now let's query the demo API and see how it reacts to our inputs. When the demo
 is launched, the database is recreated. So our endpoints to list the authors
 and books show empty arrays.
 
-`GET /api/author 200`
+```js
+GET /api/author 200
+```
 ```js
 []
 ```
 
-`GET /api/book 200`
+```js
+GET /api/book 200
+```
 ```js
 []
 ```
@@ -98,7 +102,9 @@ and books show empty arrays.
 If we want to access a book by its *id*, well... it is not found, that's
 expected.
 
-`GET /api/book/2 404`
+```js
+GET /api/book/2 404
+```
 ```js
 {
   "error": "Not found",
@@ -108,8 +114,8 @@ expected.
 
 Now, let's create some data.
 
-`POST /api/author 201`
 ```js
+POST /api/author 201
 {
   "firstname": "Gorges",
   "lastname": "Martin",
