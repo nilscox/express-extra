@@ -108,6 +108,8 @@ expected.
 
 Now, let's create some data.
 
+> Note: the first block is the request payload, the second one is the response.
+
 `POST /api/author 201`
 ```js
 {
