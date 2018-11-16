@@ -35,6 +35,9 @@ describe('demo', () => {
     await agent.get('/api/book')
       .expect(200, []);
 
+    await agent.get('/api/book/2')
+      .expect(404, { error: 'Not found', resource: 'book' });
+
     await agent.post('/api/author')
       .set('token', 'zorglub')
       .send({ firstname: 'Gorges', lastname: 'Martin' })
@@ -59,24 +62,6 @@ describe('demo', () => {
     await agent.post('/api/book')
       .set('token', 'zorglub')
       .send({
-        title: null,
-        nbPages: -8,
-        author: {
-          firstname: true,
-          lastname: '   ',
-        },
-      })
-      .expect(400, {
-        EAN: 'Missing value',
-        'author.firstname': 'Invalid value type',
-        'author.lastname': 'this field must not be empty',
-        nbPages: 'this field must be positive',
-        title: 'Invalid value type',
-      });
-
-    await agent.post('/api/book')
-      .set('token', 'zorglub')
-      .send({
         title: 'The hichicker\'s guide to the galaxy',
         EAN: '1230123456789',
         nbPages: 137,
@@ -96,6 +81,24 @@ describe('demo', () => {
         authorId: 2,
       })
       .expect(201, { ...DG, author: DA });
+
+    await agent.post('/api/book')
+      .set('token', 'zorglub')
+      .send({
+        title: null,
+        nbPages: -8,
+        author: {
+          firstname: true,
+          lastname: '   ',
+        },
+      })
+      .expect(400, {
+        EAN: 'Missing value',
+        'author.firstname': 'Invalid value type',
+        'author.lastname': 'this field must not be empty',
+        nbPages: 'this field must be positive',
+        title: 'Invalid value type',
+      });
 
     await agent.get('/api/book')
       .expect(200, [{ ...GOT, author: GM }, { ...H2G2, author: DA }, { ...DG, author: DA }]);
