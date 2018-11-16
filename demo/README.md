@@ -314,7 +314,7 @@ Now we can easily read all our data.
 You want to read a book? Let's rent GoT, which have the id `1`.
 
 `POST /api/book/1/rent 200`
-```text
+```txt
 Have fun reading Game of thrones!
 ```
 
@@ -346,12 +346,12 @@ We now have 2 books, and the limit is reached. We can't rent another book...
 But we can return one before!
 
 `POST /api/book/2/return 200`
-```text
+```txt
 Thank you for returning The hichicker's guide to the galaxy.
 ```
 
 `POST /api/book/3/rent 200`
-```text
+```txt
 Have fun reading Dirk Genlty's holistic detective agency!
 ```
 
